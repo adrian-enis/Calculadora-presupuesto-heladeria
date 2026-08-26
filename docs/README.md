@@ -1,4 +1,3 @@
-@AGENTS.md
 # 🍦 Heladería Dibuluc — Sistema de Costos y Rentabilidad
 
 ## 📌 Visión General
