@@ -184,9 +184,9 @@ Merma = Manual (el usuario declara qué se perdió, no se calcula solo)
 
 ---
 
-## 📌 Pendiente de confirmar
-- [ ] ¿Bloquear producción si falta stock de algún insumo, o permitir de todos modos con advertencia?
-- [ ] Al anular una Producción, ¿se debería devolver el stock consumido al insumo? (hoy: no se revierte)
+## 📌 Decisiones confirmadas (MVP)
+- Producción se bloquea si falta stock de algún insumo (no permite negativo).
+- Anular una Producción NO devuelve el stock consumido al insumo.
 
 ---
 

@@ -146,9 +146,9 @@ Cuando codifiques:
 
 ---
 
-## 📌 Pendiente de definir
-- [ ] Validación: ¿qué pasa si se intenta producir una receta y no hay stock suficiente de algún insumo? (hoy: se bloquea)
-- [ ] Al anular una Producción, ¿se devuelve el stock consumido al insumo? (hoy: no se revierte)
+## 📌 Decisiones confirmadas (MVP)
+- Producción se bloquea si falta stock de algún insumo (no permite negativo).
+- Anular una Producción NO devuelve el stock consumido al insumo.
 
 ---
 
