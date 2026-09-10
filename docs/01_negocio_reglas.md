@@ -25,10 +25,6 @@ Ticket con múltiples items: material comprado, cantidad, unidad, costo.
 - ⚠️ **Edge case aceptado (MVP):** si parte de esa cantidad ya fue **consumida por una Producción** antes de borrar/editar la compra, el modelo no sabe de qué compra específica salió ese consumo (no rastrea lotes/FIFO, es un promedio ciego). En ese caso el recalculo es una **aproximación** (puede pisar en 0 antes de tiempo). Para el MVP es aceptable; una v2 con lotes (FIFO) lo resolvería con precisión exacta.
 - ⚠️ **Trade-off aceptado:** se pierde trazabilidad de auditoría de la compra en sí (no hay "anulado", desaparece del historial) — pero el costo_promedio del insumo sí queda correcto (o aproximado, según el edge case de arriba).
 
-**Precio $0 (Regalos):**
-- Suman cantidad al `stock_disponible` del insumo.
-- **NO** modifican el `costo_promedio` (se valorizan al costo_promedio vigente, no lo distorsionan).
-
 ---
 
 ### 2. Insumo
@@ -202,6 +198,5 @@ Merma = Manual (el usuario declara qué se perdió, no se calcula solo)
 ✅ Snapshot de `costo_lote` = congelado, no retroactivo
 ✅ Validar siempre: vendidos + merma <= producidos
 ✅ Merma = manual, nunca derivada automáticamente
-✅ Regalos ($0): suman stock, no mueven costo_promedio
 
 ---

@@ -159,7 +159,6 @@ CREATE INDEX idx_produccion_consumos_produccion ON produccion_consumos(produccio
 | Bloquear producción si falta stock | Requiere comparar contra varias filas de `receta_ingredientes` a la vez | `produccion.service.ts` |
 | Receta editable solo si no fue usada | Requiere un `EXISTS` contra `producciones` | `receta.service.ts` |
 | Conversión de unidad (L → ml, no kg → ml) | Lógica de categorías de unidad, no relacional | `lib/unidades.ts` |
-| Regalos ($0) no mueven costo_promedio | Es una rama del mismo cálculo de compra | `lib/inventario.ts` |
 
 ---
 

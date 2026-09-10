@@ -18,8 +18,6 @@
   - Entonces: si el insumo no existe, se crea automáticamente; se actualiza `stock_disponible` y `costo_promedio` según la fórmula de inventario perpetuo
 - Dado que la compra tiene varios items (ticket multi-item)
   - Entonces cada item actualiza su insumo por separado
-- Dado que cargo un item con Precio = $0 (regalo)
-  - Entonces suma cantidad al stock, pero NO mueve el `costo_promedio`
 - Dado que intento cargar Cantidad <= 0, Precio < 0, o Fecha futura
   - Entonces el sistema rechaza el guardado con mensaje de error
 - Dado que intento convertir unidades de categorías distintas (ej. kg → ml)

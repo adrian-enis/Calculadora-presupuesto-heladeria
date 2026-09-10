@@ -67,7 +67,6 @@ Fecha: 2024-01-15
 Leche     | 5000 ml | $50
 Arequipe  | 1000 g  | $8
 ```
-- **Regalos ($0):** suman cantidad al stock pero NO mueven el costo_promedio (se valorizan al costo_promedio vigente del insumo, para no distorsionar el cálculo).
 - **Editar / Eliminar:** ✅ Resuelto — Hard Delete (se borra el registro). Al borrar o editar, se ajusta el `stock_disponible` del insumo Y se recalcula su `costo_promedio` (usando el valor/cantidad de ese ítem, sin necesitar historial completo). Detalle completo en `01_negocio_reglas.md`.
 
 ### Insumo
