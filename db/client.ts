@@ -110,7 +110,7 @@ export async function getDb(): Promise<SQLite.SQLiteDatabase> {
       const db = await SQLite.openDatabaseAsync(DB_NAME);
       await db.execAsync(SCHEMA_SQL);
       dbInstance = db;
-      return db;
+      return db; 
     })();
   }
 
