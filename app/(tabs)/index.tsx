@@ -1,31 +1,185 @@
-import { StyleSheet } from 'react-native';
+/**
+ * app/(tabs)/index.tsx
+ *
+ * Dashboard (Home). Traducción de docs/../stitch_helader_a_dibuluc_cost_tracker
+ * /dashboard_helader_a_dibuluc — por ahora con datos estáticos de ese diseño;
+ * falta conectar a useProducciones/useCompras cuando se defina qué "resumen de
+ * hoy" significa exactamente (¿solo producciones de hoy? ¿ganancia sobre qué?).
+ */
 
-import EditScreenInfo from '@/components/EditScreenInfo';
-import { Text, View } from '@/components/Themed';
+import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
+import type { ComponentProps } from 'react';
+import { ScrollView, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-export default function TabOneScreen() {
+type MaterialIconName = ComponentProps<typeof MaterialIcons>['name'];
+
+function StatCard({ label, value, valueClassName }: { label: string; value: string; valueClassName?: string }) {
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Tab One</Text>
-      <View style={styles.separator} lightColor="#eee" darkColor="rgba(255,255,255,0.1)" />
-      <EditScreenInfo path="app/(tabs)/index.tsx" />
+    <View className="min-w-[170px] rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
+      <Text className="mb-1 text-sm text-slate-500">{label}</Text>
+      <Text className={`text-[32px] font-bold leading-[38px] text-slate-900 ${valueClassName ?? ''}`}>{value}</Text>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  separator: {
-    marginVertical: 30,
-    height: 1,
-    width: '80%',
-  },
-});
+function QuickAction({
+  icon,
+  iconSet = 'material',
+  iconColor,
+  label,
+  className,
+  textClassName,
+}: {
+  icon: MaterialIconName | ComponentProps<typeof MaterialCommunityIcons>['name'];
+  iconSet?: 'material' | 'community';
+  iconColor: string;
+  label: string;
+  className: string;
+  textClassName: string;
+}) {
+  const IconComponent = iconSet === 'community' ? MaterialCommunityIcons : MaterialIcons;
+  return (
+    <View className={`h-24 items-center justify-center gap-1 rounded-xl shadow-sm ${className}`}>
+      <IconComponent name={icon as never} size={24} color={iconColor} />
+      <Text className={`text-xs font-semibold ${textClassName}`}>{label}</Text>
+    </View>
+  );
+}
+
+function AccionRecienteItem({
+  icon,
+  iconColor,
+  chipClassName,
+  titulo,
+  hace,
+  valor,
+  valorClassName,
+}: {
+  icon: MaterialIconName;
+  iconColor: string;
+  chipClassName: string;
+  titulo: string;
+  hace: string;
+  valor: string;
+  valorClassName: string;
+}) {
+  return (
+    <View className="flex-row items-center gap-3 rounded-xl border border-slate-100 bg-white p-3 shadow-sm">
+      <View className={`rounded-full p-2 ${chipClassName}`}>
+        <MaterialIcons name={icon} size={18} color={iconColor} />
+      </View>
+      <View className="flex-1">
+        <Text className="text-sm font-semibold text-slate-900">{titulo}</Text>
+        <Text className="mt-0.5 text-xs text-slate-500">{hace}</Text>
+      </View>
+      <Text className={`text-base font-semibold ${valorClassName}`}>{valor}</Text>
+    </View>
+  );
+}
+
+export default function HomeScreen() {
+  return (
+    <SafeAreaView edges={['top']} className="flex-1 bg-slate-50">
+      <View className="h-12 w-full flex-row items-center justify-between bg-white px-4 shadow-sm">
+        <View className="flex-row items-center gap-2">
+          <MaterialIcons name="calendar-today" size={20} color="#047857" />
+          <Text className="text-xl font-bold text-primary-700">Heladería Dibuluc</Text>
+        </View>
+        <MaterialIcons name="account-circle" size={26} color="#047857" />
+      </View>
+
+      <ScrollView className="flex-1 px-4" contentContainerClassName="gap-6 pb-6 pt-4">
+        <View className="flex-row items-center gap-1">
+          <MaterialIcons name="event" size={16} color="#94a3b8" />
+          <Text className="text-sm text-slate-500">01 Septiembre 2024</Text>
+        </View>
+
+        <View>
+          <Text className="mb-2 text-xl font-bold text-slate-900">Resumen de hoy</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerClassName="gap-4">
+            <StatCard label="Helados Producidos Hoy" value="48" />
+            <StatCard label="Ganancia Estimada" value="$72.00" valueClassName="text-primary-500" />
+            <StatCard label="Costo Promedio" value="$0.59" valueClassName="text-slate-500" />
+          </ScrollView>
+        </View>
+
+        <View className="flex-row flex-wrap gap-4">
+          <View className="w-[47%]">
+            <QuickAction
+              icon="add-circle"
+              iconColor="#431407"
+              label="Nueva Compra"
+              className="bg-secondary-500"
+              textClassName="text-orange-950"
+            />
+          </View>
+          <View className="w-[47%]">
+            <QuickAction
+              icon="inventory"
+              iconColor="#022c22"
+              label="Producción"
+              className="bg-primary-500"
+              textClassName="text-emerald-950"
+            />
+          </View>
+          <View className="w-[47%]">
+            <QuickAction
+              icon="ice-cream"
+              iconSet="community"
+              iconColor="#451a03"
+              label="Recetas"
+              className="bg-accent-500"
+              textClassName="text-amber-950"
+            />
+          </View>
+          <View className="w-[47%]">
+            <QuickAction
+              icon="bar-chart"
+              iconColor="#334155"
+              label="Análisis"
+              className="bg-slate-200"
+              textClassName="text-slate-700"
+            />
+          </View>
+        </View>
+
+        <View>
+          <View className="mb-2 flex-row items-center justify-between">
+            <Text className="text-xl font-bold text-slate-900">Últimas Acciones</Text>
+            <Text className="text-sm font-semibold text-primary-700">Ver todo</Text>
+          </View>
+          <View className="gap-2">
+            <AccionRecienteItem
+              icon="shopping-cart"
+              chipClassName="bg-secondary-500/15"
+              iconColor="#ea580c"
+              titulo="Compra registrada: Leche 5L"
+              hace="hace 2 horas"
+              valor="-$13.00"
+              valorClassName="text-red-600"
+            />
+            <AccionRecienteItem
+              icon="inventory"
+              chipClassName="bg-primary-500/15"
+              iconColor="#047857"
+              titulo="Producción: Chocolate (24)"
+              hace="hace 5 horas"
+              valor="Lista"
+              valorClassName="text-primary-500"
+            />
+            <AccionRecienteItem
+              icon="shopping-cart"
+              chipClassName="bg-secondary-500/15"
+              iconColor="#ea580c"
+              titulo="Compra registrada: Arequipe 1kg"
+              hace="hace 1 día"
+              valor="-$9.00"
+              valorClassName="text-red-600"
+            />
+          </View>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}

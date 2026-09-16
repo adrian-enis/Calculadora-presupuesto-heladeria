@@ -1,68 +1,59 @@
-import { SymbolView } from 'expo-symbols';
-import { Link, Tabs } from 'expo-router';
-import { Platform, Pressable } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
+import { Tabs } from 'expo-router';
+import { Text, View } from 'react-native';
 
-import Colors from '@/constants/Colors';
-import { useColorScheme } from '@/components/useColorScheme';
-import { useClientOnlyValue } from '@/components/useClientOnlyValue';
+type IconName = keyof typeof MaterialIcons.glyphMap;
+
+function TabPill({ focused, icon, label }: { focused: boolean; icon: IconName; label: string }) {
+  return (
+    <View
+      className={`flex-row items-center gap-1 rounded-full px-4 py-2 ${focused ? 'bg-primary-500' : ''}`}>
+      <MaterialIcons name={icon} size={22} color={focused ? '#022c22' : '#64748b'} />
+      <Text className={`text-xs font-semibold ${focused ? 'text-emerald-950' : 'text-slate-500'}`}>{label}</Text>
+    </View>
+  );
+}
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
-
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme].tint,
-        // Disable the static render of the header on web
-        // to prevent a hydration error in React Navigation v6.
-        headerShown: useClientOnlyValue(false, true),
+        headerShown: false,
+        tabBarShowLabel: false,
+        tabBarActiveTintColor: '#022c22',
+        tabBarStyle: {
+          height: 64,
+          paddingTop: 8,
+          backgroundColor: '#e2e8f0',
+          borderTopWidth: 0,
+        },
       }}>
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Tab One',
-          tabBarIcon: ({ color }) => (
-            <SymbolView
-              name={{
-                ios: 'chevron.left.forwardslash.chevron.right',
-                android: 'code',
-                web: 'code',
-              }}
-              tintColor={color}
-              size={28}
-            />
-          ),
-          headerRight: () => (
-            <Link href="/modal" asChild>
-              <Pressable style={{ marginRight: 15 }}>
-                {({ pressed }) => (
-                  <SymbolView
-                    name={{ ios: 'info.circle', android: 'info', web: 'info' }}
-                    size={25}
-                    tintColor={Colors[colorScheme].text}
-                    style={{ opacity: pressed ? 0.5 : 1 }}
-                  />
-                )}
-              </Pressable>
-            </Link>
-          ),
+          title: 'Home',
+          tabBarIcon: ({ focused }) => <TabPill focused={focused} icon="home" label="Home" />,
         }}
       />
       <Tabs.Screen
-        name="two"
+        name="compras/index"
         options={{
-          title: 'Tab Two',
-          tabBarIcon: ({ color }) => (
-            <SymbolView
-              name={{
-                ios: 'chevron.left.forwardslash.chevron.right',
-                android: 'code',
-                web: 'code',
-              }}
-              tintColor={color}
-              size={28}
-            />
-          ),
+          title: 'History',
+          tabBarIcon: ({ focused }) => <TabPill focused={focused} icon="history" label="History" />,
+        }}
+      />
+      <Tabs.Screen
+        name="insumos/index"
+        options={{
+          title: 'Insumos',
+          tabBarIcon: ({ focused }) => <TabPill focused={focused} icon="inventory" label="Insumos" />,
+        }}
+      />
+      <Tabs.Screen
+        name="recetas/index"
+        options={{
+          title: 'Recetas',
+          tabBarIcon: ({ focused }) => <TabPill focused={focused} icon="menu-book" label="Recetas" />,
         }}
       />
     </Tabs>
