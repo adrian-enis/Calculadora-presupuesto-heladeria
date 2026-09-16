@@ -22,7 +22,7 @@
  */
 
 import { getDb } from './client';
-import { crearReceta } from '@/features/recetas/receta.repository';
+import { crearReceta } from '@/features/recetas/receta.service';
 import type { CrearRecetaInput } from '@/features/recetas/receta.schema';
 
 const RECETAS_INICIALES: CrearRecetaInput[] = [

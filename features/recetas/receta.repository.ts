@@ -10,13 +10,7 @@ import { getDb } from '@/db/client';
 import { obtenerOCrearInsumo } from '@/features/insumos/insumo.repository';
 import { convertirACantidadBase, type Unidad } from '@/lib/unidades';
 import type { SQLiteDatabase } from 'expo-sqlite';
-import {
-  CrearRecetaSchema,
-  EditarIngredientesRecetaSchema,
-  type CrearRecetaInput,
-  type EditarIngredientesRecetaInput,
-  type RecetaIngredienteInput,
-} from './receta.schema';
+import type { CrearRecetaInput, EditarIngredientesRecetaInput, RecetaIngredienteInput } from './receta.schema';
 
 async function insertarIngredientes(
   db: SQLiteDatabase,
@@ -35,7 +29,9 @@ async function insertarIngredientes(
   }
 }
 
-async function tieneProduccionesAsociadas(db: SQLiteDatabase, recetaId: number): Promise<boolean> {
+/** HU 3.1b: si tiene producciones asociadas, sus ingredientes quedan bloqueados. */
+export async function tieneProduccionesAsociadas(recetaId: number): Promise<boolean> {
+  const db = await getDb();
   const row = await db.getFirstAsync<{ id: number }>('SELECT id FROM producciones WHERE receta_id = ? LIMIT 1', [
     recetaId,
   ]);
@@ -43,8 +39,7 @@ async function tieneProduccionesAsociadas(db: SQLiteDatabase, recetaId: number):
 }
 
 /** Crea una receta con sus ingredientes (HU 3.1). Si un insumo no existe, se crea. */
-export async function crearReceta(inputRaw: CrearRecetaInput): Promise<{ recetaId: number }> {
-  const input = CrearRecetaSchema.parse(inputRaw);
+export async function crearReceta(input: CrearRecetaInput): Promise<{ recetaId: number }> {
   const db = await getDb();
 
   let recetaId = 0;
@@ -63,15 +58,14 @@ export async function crearReceta(inputRaw: CrearRecetaInput): Promise<{ recetaI
  * ya fue usada en alguna Producción — no se puede expresar como CHECK de
  * SQLite (depende de otra tabla), queda a cargo de este repository.
  */
-export async function editarIngredientesReceta(recetaId: number, inputRaw: EditarIngredientesRecetaInput): Promise<void> {
-  const input = EditarIngredientesRecetaSchema.parse(inputRaw);
+export async function editarIngredientesReceta(recetaId: number, input: EditarIngredientesRecetaInput): Promise<void> {
   const db = await getDb();
 
   await db.withTransactionAsync(async () => {
     const receta = await db.getFirstAsync<{ id: number }>('SELECT id FROM recetas WHERE id = ?', [recetaId]);
     if (!receta) throw new Error(`La receta ${recetaId} no existe`);
 
-    if (await tieneProduccionesAsociadas(db, recetaId)) {
+    if (await tieneProduccionesAsociadas(recetaId)) {
       throw new Error(`La receta ${recetaId} ya fue usada en una producción: sus ingredientes no se pueden editar`);
     }
 

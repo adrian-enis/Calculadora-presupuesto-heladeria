@@ -13,7 +13,7 @@ import { deshacerEntrada, editarEntrada, registrarEntrada, type EstadoInsumo } f
 import { convertirACantidadBase } from '@/lib/unidades';
 import type { Unidad } from '@/lib/unidades';
 import type { SQLiteDatabase } from 'expo-sqlite';
-import { CompraSchema, EditarCompraItemSchema, type CompraInput, type EditarCompraItemInput } from './compra.schema';
+import type { CompraInput, EditarCompraItemInput } from './compra.schema';
 
 function filaAEstado(row: {
   stock_disponible: number;
@@ -62,8 +62,7 @@ async function obtenerInsumoDeItem(
  * (HU 1.1). Todo o nada: si algún item tiene una unidad de categoría distinta
  * a la unidad_base de su insumo, se aborta la transacción entera.
  */
-export async function registrarCompra(inputRaw: CompraInput): Promise<{ compraId: number }> {
-  const input = CompraSchema.parse(inputRaw);
+export async function registrarCompra(input: CompraInput): Promise<{ compraId: number }> {
   const db = await getDb();
 
   let compraId = 0;
@@ -94,8 +93,7 @@ export async function registrarCompra(inputRaw: CompraInput): Promise<{ compraId
  * valor viejo y aplica el nuevo en un solo delta sobre costo_promedio. No
  * toca costo_lote de producciones pasadas — ese valor queda congelado.
  */
-export async function editarCompraItem(compraItemId: number, inputRaw: EditarCompraItemInput): Promise<void> {
-  const input = EditarCompraItemSchema.parse(inputRaw);
+export async function editarCompraItem(compraItemId: number, input: EditarCompraItemInput): Promise<void> {
   const db = await getDb();
 
   await db.withTransactionAsync(async () => {
