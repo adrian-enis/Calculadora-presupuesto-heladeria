@@ -6,7 +6,7 @@
  * los datos listos para persistir. Esto lo hace testeable sin mockear la DB.
  */
 
-import { consumirStock, type EstadoInsumo } from '@/lib/inventario';
+import { consumirStock, costoDeConsumo, type EstadoInsumo } from '@/lib/inventario';
 
 export interface IngredienteReceta {
   insumoId: number;
@@ -48,19 +48,15 @@ export function calcularConsumosProduccion(
       throw new Error(`Insumo ${ingrediente.insumoId} de la receta no tiene estado cargado`);
     }
 
-    let estadoNuevo: EstadoInsumo;
-    try {
-      estadoNuevo = consumirStock(estadoActual, ingrediente.cantidad);
-    } catch {
-      // Re-lanzamos con el insumo identificado: quien llama (la UI) necesita saber
-      // CUÁL insumo falta, no solo que "algo" falló.
+    if (ingrediente.cantidad > estadoActual.stockDisponible) {
       throw new Error(
         `Stock insuficiente del insumo ${ingrediente.insumoId}: se necesitan ${ingrediente.cantidad}, ` +
           `hay ${estadoActual.stockDisponible} disponibles`
       );
     }
+    const estadoNuevo = consumirStock(estadoActual, ingrediente.cantidad);
 
-    const costoUsado = ingrediente.cantidad * estadoActual.costoPromedio;
+    const costoUsado = costoDeConsumo(estadoActual, ingrediente.cantidad);
 
     consumos.push({
       insumoId: ingrediente.insumoId,
