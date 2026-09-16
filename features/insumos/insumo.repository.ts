@@ -5,6 +5,7 @@
  * necesitan "buscar o crear por nombre" y "actualizar estado de inventario").
  */
 
+import { getDb } from '@/db/client';
 import type { EstadoInsumo } from '@/lib/inventario';
 import type { Unidad } from '@/lib/unidades';
 import type { SQLiteDatabase } from 'expo-sqlite';
@@ -79,4 +80,45 @@ export async function actualizarEstadoInsumo(db: SQLiteDatabase, insumoId: numbe
     estado.valorTotalStock,
     insumoId,
   ]);
+}
+
+export interface InsumoListado {
+  id: number;
+  nombre: string;
+  unidadBase: Unidad;
+  stockDisponible: number;
+  costoPromedio: number;
+}
+
+/** Lista todos los insumos, incluso sin stock (HU 2.1: no desaparecen). */
+export async function listarInsumos(): Promise<InsumoListado[]> {
+  const db = await getDb();
+  const rows = await db.getAllAsync<{
+    id: number;
+    nombre: string;
+    unidad_base: Unidad;
+    stock_disponible: number;
+    costo_promedio: number;
+  }>('SELECT id, nombre, unidad_base, stock_disponible, costo_promedio FROM insumos ORDER BY nombre');
+
+  return rows.map((r) => ({
+    id: r.id,
+    nombre: r.nombre,
+    unidadBase: r.unidad_base,
+    stockDisponible: r.stock_disponible,
+    costoPromedio: r.costo_promedio,
+  }));
+}
+
+/**
+ * Corrige el nombre de un insumo (HU 2.2), retroactivo a compras/recetas
+ * pasadas porque esas tablas solo guardan insumo_id. unidad_base es congelada:
+ * a propósito no existe un editarUnidadInsumo().
+ */
+export async function editarNombreInsumo(insumoId: number, nombre: string): Promise<void> {
+  const db = await getDb();
+  const result = await db.runAsync('UPDATE insumos SET nombre = ? WHERE id = ?', [nombre, insumoId]);
+  if (result.changes === 0) {
+    throw new Error(`Insumo ${insumoId} no existe`);
+  }
 }
