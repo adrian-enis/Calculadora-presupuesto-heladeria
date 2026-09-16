@@ -1,19 +1,19 @@
 /**
- * features/Compra.repository.ts
+ * features/compras/compra.repository.ts
  *
  * Único lugar que toca SQLite para Compras. Orquesta la transacción: lee/crea
- * el insumo (Insumo.repository.ts), delega el cálculo (conversión de unidad
+ * el insumo (insumo.repository.ts), delega el cálculo (conversión de unidad
  * en lib/unidades.ts + fórmula de inventario en lib/inventario.ts), y persiste
  * todo atómico.
  */
 
 import { getDb } from '@/db/client';
+import { actualizarEstadoInsumo, obtenerOCrearInsumo } from '@/features/insumos/insumo.repository';
 import { deshacerEntrada, editarEntrada, registrarEntrada, type EstadoInsumo } from '@/lib/inventario';
 import { convertirACantidadBase } from '@/lib/unidades';
 import type { Unidad } from '@/lib/unidades';
 import type { SQLiteDatabase } from 'expo-sqlite';
-import { actualizarEstadoInsumo, obtenerOCrearInsumo } from './Insumo.repository';
-import { CompraSchema, EditarCompraItemSchema, type CompraInput, type EditarCompraItemInput } from './Compra.schema';
+import { CompraSchema, EditarCompraItemSchema, type CompraInput, type EditarCompraItemInput } from './compra.schema';
 
 function filaAEstado(row: {
   stock_disponible: number;

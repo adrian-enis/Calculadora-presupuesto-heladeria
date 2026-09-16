@@ -9,8 +9,8 @@
 import { getDb } from '@/db/client';
 import type { EstadoInsumo } from '@/lib/inventario';
 import type { SQLiteDatabase } from 'expo-sqlite';
-import { calcularConsumosProduccion, validarVentaYMerma, type IngredienteReceta } from './Produccion.service';
-import { ProducirLoteSchema, type ProducirLoteInput } from './Produccion.shema';
+import { calcularConsumosProduccion, validarVentaYMerma, type IngredienteReceta } from './produccion.service';
+import { ProducirLoteSchema, type ProducirLoteInput } from './produccion.schema';
 
 export interface ProducirLoteResultado {
   produccionId: number;

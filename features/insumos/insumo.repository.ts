@@ -1,5 +1,5 @@
 /**
- * features/Insumo.repository.ts
+ * features/insumos/insumo.repository.ts
  *
  * Helpers de SQLite sobre `insumos` compartidos por Compra y Receta (ambas
  * necesitan "buscar o crear por nombre" y "actualizar estado de inventario").

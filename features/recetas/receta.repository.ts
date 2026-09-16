@@ -1,5 +1,5 @@
 /**
- * features/Receta.repository.ts
+ * features/recetas/receta.repository.ts
  *
  * Único lugar que toca SQLite para Recetas. A diferencia de Compra, cargar un
  * ingrediente NO toca stock/costo_promedio del insumo — receta_ingredientes
@@ -7,16 +7,16 @@
  */
 
 import { getDb } from '@/db/client';
+import { obtenerOCrearInsumo } from '@/features/insumos/insumo.repository';
 import { convertirACantidadBase, type Unidad } from '@/lib/unidades';
 import type { SQLiteDatabase } from 'expo-sqlite';
-import { obtenerOCrearInsumo } from './Insumo.repository';
 import {
   CrearRecetaSchema,
   EditarIngredientesRecetaSchema,
   type CrearRecetaInput,
   type EditarIngredientesRecetaInput,
   type RecetaIngredienteInput,
-} from './Receta.schema';
+} from './receta.schema';
 
 async function insertarIngredientes(
   db: SQLiteDatabase,
