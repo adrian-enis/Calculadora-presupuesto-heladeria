@@ -60,6 +60,14 @@ export function editarEntrada(
 }
 
 /**
+ * Valor monetario de consumir `cantidad` a costo promedio vigente.
+ * Única definición de la fórmula: la usan consumirStock() y produccion.service.
+ */
+export function costoDeConsumo(estado: EstadoInsumo, cantidad: number): number {
+  return cantidad * estado.costoPromedio;
+}
+
+/**
  * Consumir stock al producir un lote (docs/01_negocio_reglas.md, sección 4).
  * No modifica costoPromedio — solo se descuenta cantidad y valor.
  * Lanza error si no hay stock suficiente (regla: producción se bloquea).
@@ -70,8 +78,7 @@ export function consumirStock(estado: EstadoInsumo, cantidadUsada: number): Esta
       `Stock insuficiente: se necesitan ${cantidadUsada}, hay ${estado.stockDisponible} disponibles`
     );
   }
-
-  const costoUsado = cantidadUsada * estado.costoPromedio;
+  const costoUsado = costoDeConsumo(estado, cantidadUsada);
   const stockDisponible = estado.stockDisponible - cantidadUsada;
   const valorTotalStock = estado.valorTotalStock - costoUsado;
 
