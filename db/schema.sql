@@ -1,6 +1,8 @@
 -- Heladería Dibuluc — Schema SQLite
--- Fuente de verdad: docs/04_base_datos.md
--- Ejecutar una sola vez al inicializar la app (ver db/client.ts)
+-- Referencia legible del schema acumulado; fuente de verdad de negocio: docs/04_base_datos.md
+-- La fuente EJECUTABLE del schema es db/migrations/ (ver db/migrate.ts) — este
+-- archivo no se corre en runtime. Si agregás una migración, actualizá este
+-- archivo a mano para que siga reflejando el estado final acumulado.
 
 PRAGMA foreign_keys = ON;
 
