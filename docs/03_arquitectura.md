@@ -74,6 +74,7 @@ db/
   schema.sql                    # DDL de todas las tablas
   migrations/                    # Cambios incrementales al schema
   client.ts                      # Inicialización de expo-sqlite
+  seed.ts                        # Datos iniciales de dev/demo, invocación manual — no corre al arrancar
 
 lib/
   costos.ts                      # Funciones puras: costoUnitario(), ganancia(), margen()
