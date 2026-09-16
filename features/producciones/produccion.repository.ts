@@ -7,6 +7,7 @@
  */
 
 import { getDb } from '@/db/client';
+import { costoUnitario, ganancia, margen } from '@/lib/costos';
 import type { EstadoInsumo } from '@/lib/inventario';
 import type { SQLiteDatabase } from 'expo-sqlite';
 import { calcularConsumosProduccion, validarVentaYMerma, type IngredienteReceta } from './produccion.service';
@@ -155,4 +156,86 @@ export async function anularProduccion(produccionId: number): Promise<void> {
   if (result.changes === 0) {
     throw new Error(`Producción ${produccionId} inexistente o ya anulada`);
   }
+}
+
+export interface ProduccionListada {
+  id: number;
+  recetaNombre: string;
+  fecha: string;
+  heladosProducidos: number;
+  heladosVendidos: number;
+  mermaDeclarada: number;
+  costoLote: number;
+  precioVenta: number | null;
+  estado: string;
+}
+
+function filaAProduccionListada(row: {
+  id: number;
+  receta_nombre: string;
+  fecha: string;
+  helados_producidos: number;
+  helados_vendidos: number;
+  merma_declarada: number;
+  costo_lote: number;
+  precio_venta: number | null;
+  estado: string;
+}): ProduccionListada {
+  return {
+    id: row.id,
+    recetaNombre: row.receta_nombre,
+    fecha: row.fecha,
+    heladosProducidos: row.helados_producidos,
+    heladosVendidos: row.helados_vendidos,
+    mermaDeclarada: row.merma_declarada,
+    costoLote: row.costo_lote,
+    precioVenta: row.precio_venta,
+    estado: row.estado,
+  };
+}
+
+/** Historial de producciones, más reciente primero. */
+export async function listarProducciones(limit: number, offset: number): Promise<ProduccionListada[]> {
+  const db = await getDb();
+  const rows = await db.getAllAsync<Parameters<typeof filaAProduccionListada>[0]>(
+    `SELECT p.id, r.nombre AS receta_nombre, p.fecha, p.helados_producidos, p.helados_vendidos,
+            p.merma_declarada, p.costo_lote, p.precio_venta, p.estado
+     FROM producciones p JOIN recetas r ON r.id = p.receta_id
+     ORDER BY p.fecha DESC, p.id DESC LIMIT ? OFFSET ?`,
+    [limit, offset]
+  );
+  return rows.map(filaAProduccionListada);
+}
+
+export interface ProduccionDetalle extends ProduccionListada {
+  costoUnitario: number;
+  ganancia: number | null;
+  margen: number | null;
+}
+
+/**
+ * Detalle de un lote con costo/ganancia/margen (HU 4.4). ganancia y margen
+ * quedan null si todavía no se cargó precio_venta — no hay con qué compararlos.
+ */
+export async function obtenerProduccion(produccionId: number): Promise<ProduccionDetalle | null> {
+  const db = await getDb();
+  const row = await db.getFirstAsync<Parameters<typeof filaAProduccionListada>[0]>(
+    `SELECT p.id, r.nombre AS receta_nombre, p.fecha, p.helados_producidos, p.helados_vendidos,
+            p.merma_declarada, p.costo_lote, p.precio_venta, p.estado
+     FROM producciones p JOIN recetas r ON r.id = p.receta_id
+     WHERE p.id = ?`,
+    [produccionId]
+  );
+  if (!row) return null;
+
+  const listada = filaAProduccionListada(row);
+  const costoUnit = costoUnitario(listada.costoLote, listada.heladosProducidos);
+
+  return {
+    ...listada,
+    costoUnitario: costoUnit,
+    ganancia: listada.precioVenta === null ? null : ganancia(listada.precioVenta, costoUnit),
+    // margen() divide por precioVenta: con precioVenta = 0 el % no está definido.
+    margen: !listada.precioVenta ? null : margen(listada.precioVenta, costoUnit),
+  };
 }
