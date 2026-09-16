@@ -36,6 +36,9 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
+# repomix output (local AI context dump, not part of the source)
+repomix-output.xml
+
 # generated native folders
 /ios
 /android
