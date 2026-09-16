@@ -141,3 +141,11 @@ export async function listarRecetasActivas(): Promise<{ id: number; nombre: stri
     "SELECT id, nombre FROM recetas WHERE estado = 'activo' ORDER BY nombre"
   );
 }
+
+/** Todas las recetas (HU 3.2: las inactivas siguen visibles, solo salen del dropdown de producir). */
+export async function listarRecetas(): Promise<{ id: number; nombre: string; estado: string }[]> {
+  const db = await getDb();
+  return db.getAllAsync<{ id: number; nombre: string; estado: string }>(
+    'SELECT id, nombre, estado FROM recetas ORDER BY nombre'
+  );
+}

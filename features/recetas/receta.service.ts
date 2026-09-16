@@ -29,4 +29,4 @@ export async function editarIngredientesReceta(recetaId: number, inputRaw: Edita
   return recetaRepository.editarIngredientesReceta(recetaId, input);
 }
 
-export { desactivarReceta, obtenerReceta, listarRecetasActivas } from './receta.repository';
+export { desactivarReceta, obtenerReceta, listarRecetasActivas, listarRecetas } from './receta.repository';
