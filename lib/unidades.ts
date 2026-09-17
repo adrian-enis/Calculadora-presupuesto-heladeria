@@ -1,4 +1,5 @@
-export type Unidad = 'ml' | 'g' | 'kg' | 'l' | 'unidad';
+export const UNIDADES = ['ml', 'g', 'kg', 'l', 'unidad'] as const;
+export type Unidad = (typeof UNIDADES)[number];
 
 type Categoria = 'peso' | 'volumen' | 'conteo';
 

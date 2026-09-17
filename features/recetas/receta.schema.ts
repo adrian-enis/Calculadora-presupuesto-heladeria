@@ -1,6 +1,5 @@
+import { UNIDADES } from '@/lib/unidades';
 import { z } from 'zod';
-
-const UNIDADES = ['ml', 'g', 'kg', 'l', 'unidad'] as const;
 
 export const RecetaIngredienteSchema = z.object({
   insumoNombre: z.string().trim().min(1, 'El nombre del insumo es obligatorio'),
