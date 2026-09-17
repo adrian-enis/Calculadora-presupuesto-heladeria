@@ -15,8 +15,9 @@
  */
 
 import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import type { ComponentProps } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 type MaterialIconName = ComponentProps<typeof MaterialIcons>['name'];
@@ -28,6 +29,7 @@ function QuickAction({
   label,
   className,
   textClassName,
+  onPress,
 }: {
   icon: MaterialIconName | ComponentProps<typeof MaterialCommunityIcons>['name'];
   iconSet?: 'material' | 'community';
@@ -35,13 +37,14 @@ function QuickAction({
   label: string;
   className: string;
   textClassName: string;
+  onPress?: () => void;
 }) {
   const IconComponent = iconSet === 'community' ? MaterialCommunityIcons : MaterialIcons;
   return (
-    <View className={`h-24 items-center justify-center gap-1 rounded-xl shadow-sm ${className}`}>
+    <Pressable onPress={onPress} className={`h-24 items-center justify-center gap-1 rounded-xl shadow-sm ${className}`}>
       <IconComponent name={icon as never} size={24} color={iconColor} />
       <Text className={`text-xs font-semibold ${textClassName}`}>{label}</Text>
-    </View>
+    </Pressable>
   );
 }
 
@@ -101,6 +104,7 @@ export default function HomeScreen() {
               label="Nueva Compra"
               className="bg-secondary-500"
               textClassName="text-orange-950"
+              onPress={() => router.push('/compras/nueva')}
             />
           </View>
           <View className="w-[47%]">
