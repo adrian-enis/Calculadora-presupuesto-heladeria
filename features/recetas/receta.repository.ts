@@ -149,3 +149,60 @@ export async function listarRecetas(): Promise<{ id: number; nombre: string; est
     'SELECT id, nombre, estado FROM recetas ORDER BY nombre'
   );
 }
+
+export interface RecetaIngredienteConCostoPromedio {
+  insumoNombre: string;
+  cantidad: number;
+  unidadBase: Unidad;
+  costoPromedioInsumo: number;
+}
+
+export interface RecetaConIngredientes {
+  id: number;
+  nombre: string;
+  estado: string;
+  ingredientes: RecetaIngredienteConCostoPromedio[];
+}
+
+/**
+ * Recetas activas con sus ingredientes y el costo_promedio actual de cada
+ * insumo (pantalla "Mis Recetas"). El costo_promedio se lleva crudo: el
+ * costo estimado del lote se calcula en receta.service.ts con
+ * lib/inventario.ts, no acá (este repository es SQL puro).
+ */
+export async function listarRecetasConIngredientes(): Promise<RecetaConIngredientes[]> {
+  const db = await getDb();
+  const rows = await db.getAllAsync<{
+    receta_id: number;
+    receta_nombre: string;
+    estado: string;
+    insumo_nombre: string;
+    cantidad: number;
+    unidad_base: Unidad;
+    costo_promedio: number;
+  }>(
+    `SELECT r.id AS receta_id, r.nombre AS receta_nombre, r.estado,
+            i.nombre AS insumo_nombre, ri.cantidad, i.unidad_base, i.costo_promedio
+     FROM recetas r
+     JOIN receta_ingredientes ri ON ri.receta_id = r.id
+     JOIN insumos i ON i.id = ri.insumo_id
+     WHERE r.estado = 'activo'
+     ORDER BY r.nombre, i.nombre`
+  );
+
+  const recetasPorId = new Map<number, RecetaConIngredientes>();
+  for (const row of rows) {
+    let receta = recetasPorId.get(row.receta_id);
+    if (!receta) {
+      receta = { id: row.receta_id, nombre: row.receta_nombre, estado: row.estado, ingredientes: [] };
+      recetasPorId.set(row.receta_id, receta);
+    }
+    receta.ingredientes.push({
+      insumoNombre: row.insumo_nombre,
+      cantidad: row.cantidad,
+      unidadBase: row.unidad_base,
+      costoPromedioInsumo: row.costo_promedio,
+    });
+  }
+  return [...recetasPorId.values()];
+}

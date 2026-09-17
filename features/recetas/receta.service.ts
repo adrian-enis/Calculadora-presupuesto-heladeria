@@ -7,6 +7,8 @@
  * este chequeo acá es solo advisory para la UI, no el único gate.
  */
 
+import { costoDeConsumo } from '@/lib/inventario';
+import type { Unidad } from '@/lib/unidades';
 import * as recetaRepository from './receta.repository';
 import {
   CrearRecetaSchema,
@@ -30,3 +32,35 @@ export async function editarIngredientesReceta(recetaId: number, inputRaw: Edita
 }
 
 export { desactivarReceta, obtenerReceta, listarRecetasActivas, listarRecetas } from './receta.repository';
+
+export interface RecetaConCosto {
+  id: number;
+  nombre: string;
+  estado: string;
+  ingredientes: { insumoNombre: string; cantidad: number; unidadBase: Unidad }[];
+  costoEstimado: number;
+}
+
+/** Recetas activas con costo estimado del lote (pantalla "Mis Recetas"). */
+export async function listarRecetasConCosto(): Promise<RecetaConCosto[]> {
+  const recetas = await recetaRepository.listarRecetasConIngredientes();
+  return recetas.map((receta) => ({
+    id: receta.id,
+    nombre: receta.nombre,
+    estado: receta.estado,
+    ingredientes: receta.ingredientes.map(({ insumoNombre, cantidad, unidadBase }) => ({
+      insumoNombre,
+      cantidad,
+      unidadBase,
+    })),
+    costoEstimado: receta.ingredientes.reduce(
+      (total, ingrediente) =>
+        total +
+        costoDeConsumo(
+          { stockDisponible: 0, costoPromedio: ingrediente.costoPromedioInsumo, valorTotalStock: 0 },
+          ingrediente.cantidad
+        ),
+      0
+    ),
+  }));
+}

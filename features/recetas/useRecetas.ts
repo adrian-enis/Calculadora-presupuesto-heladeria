@@ -1,23 +1,17 @@
 /**
  * features/recetas/useRecetas.ts
  *
- * Expone el listado de recetas (HU 3.2: activas e inactivas, estas últimas
- * solo salen del dropdown de producir pero no desaparecen) y las acciones de
- * receta.service.ts a la UI.
+ * Expone las recetas activas con ingredientes y costo estimado del lote
+ * (pantalla "Mis Recetas") y las acciones de receta.service.ts a la UI.
  */
 
 import { useCallback, useEffect, useState } from 'react';
 import * as recetaService from './receta.service';
+import type { RecetaConCosto } from './receta.service';
 import type { CrearRecetaInput, EditarIngredientesRecetaInput } from './receta.schema';
 
-export interface RecetaListada {
-  id: number;
-  nombre: string;
-  estado: string;
-}
-
 export function useRecetas() {
-  const [recetas, setRecetas] = useState<RecetaListada[]>([]);
+  const [recetas, setRecetas] = useState<RecetaConCosto[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -25,7 +19,7 @@ export function useRecetas() {
     setCargando(true);
     setError(null);
     try {
-      setRecetas(await recetaService.listarRecetas());
+      setRecetas(await recetaService.listarRecetasConCosto());
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Error al cargar recetas');
     } finally {
