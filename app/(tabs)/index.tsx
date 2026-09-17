@@ -2,9 +2,16 @@
  * app/(tabs)/index.tsx
  *
  * Dashboard (Home). Traducción de docs/../stitch_helader_a_dibuluc_cost_tracker
- * /dashboard_helader_a_dibuluc — por ahora con datos estáticos de ese diseño;
- * falta conectar a useProducciones/useCompras cuando se defina qué "resumen de
- * hoy" significa exactamente (¿solo producciones de hoy? ¿ganancia sobre qué?).
+ * /dashboard_helader_a_dibuluc, sin la sección "Resumen de hoy" del mock
+ * original (decisión del negocio: no aporta nada). "Últimas Acciones" sigue
+ * con datos estáticos hasta cablear useCompras/useProducciones.
+ *
+ * Semántica confirmada de las acciones rápidas (para las pantallas que faltan):
+ * - Nueva Compra: registrar un lote de material comprado (HU 1.1).
+ * - Producción: registrar un lote producido (HU 4.1).
+ * - Recetas: ver cuántas recetas hay registradas (useRecetas).
+ * - Análisis: margen de ganancia por receta/lote — costo del lote vs.
+ *   helados producidos vs. precio de venta (HU 4.4, produccion.service).
  */
 
 import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
@@ -13,15 +20,6 @@ import { ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 type MaterialIconName = ComponentProps<typeof MaterialIcons>['name'];
-
-function StatCard({ label, value, valueClassName }: { label: string; value: string; valueClassName?: string }) {
-  return (
-    <View className="min-w-[170px] rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
-      <Text className="mb-1 text-sm text-slate-500">{label}</Text>
-      <Text className={`text-[32px] font-bold leading-[38px] text-slate-900 ${valueClassName ?? ''}`}>{value}</Text>
-    </View>
-  );
-}
 
 function QuickAction({
   icon,
@@ -93,15 +91,6 @@ export default function HomeScreen() {
         <View className="flex-row items-center gap-1">
           <MaterialIcons name="event" size={16} color="#94a3b8" />
           <Text className="text-sm text-slate-500">01 Septiembre 2024</Text>
-        </View>
-
-        <View>
-          <Text className="mb-2 text-xl font-bold text-slate-900">Resumen de hoy</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerClassName="gap-4">
-            <StatCard label="Helados Producidos Hoy" value="48" />
-            <StatCard label="Ganancia Estimada" value="$72.00" valueClassName="text-primary-500" />
-            <StatCard label="Costo Promedio" value="$0.59" valueClassName="text-slate-500" />
-          </ScrollView>
         </View>
 
         <View className="flex-row flex-wrap gap-4">
