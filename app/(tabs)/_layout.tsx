@@ -4,12 +4,23 @@ import { Text, View } from 'react-native';
 
 type IconName = keyof typeof MaterialIcons.glyphMap;
 
+/**
+ * Solo el tab activo muestra texto (en un pill). Los inactivos son
+ * ícono solo — con los 4 tabs + label no entraban cómodos en pantallas
+ * angostas de celular real.
+ */
 function TabPill({ focused, icon, label }: { focused: boolean; icon: IconName; label: string }) {
+  if (!focused) {
+    return (
+      <View className="items-center justify-center px-3 py-2">
+        <MaterialIcons name={icon} size={24} color="#64748b" />
+      </View>
+    );
+  }
   return (
-    <View
-      className={`flex-row items-center gap-1 rounded-full px-4 py-2 ${focused ? 'bg-primary-500' : ''}`}>
-      <MaterialIcons name={icon} size={22} color={focused ? '#022c22' : '#64748b'} />
-      <Text className={`text-xs font-semibold ${focused ? 'text-emerald-950' : 'text-slate-500'}`}>{label}</Text>
+    <View className="flex-row items-center gap-1 rounded-full bg-primary-500 px-4 py-2">
+      <MaterialIcons name={icon} size={22} color="#022c22" />
+      <Text className="text-xs font-semibold text-emerald-950">{label}</Text>
     </View>
   );
 }

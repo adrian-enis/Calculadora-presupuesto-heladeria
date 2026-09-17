@@ -17,7 +17,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CompraItemSchema, type CompraItemInput } from '@/features/compras/compra.schema';
@@ -79,7 +79,9 @@ export default function NuevaCompraScreen() {
   }
 
   return (
-    <View className="flex-1 items-center justify-center bg-black/40 p-4">
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      className="flex-1 items-center justify-center bg-black/40 p-4">
       <SafeAreaView
         edges={['bottom']}
         className="max-h-[90%] w-full max-w-lg overflow-hidden rounded-xl bg-white shadow-lg">
@@ -90,7 +92,10 @@ export default function NuevaCompraScreen() {
           </Pressable>
         </View>
 
-        <ScrollView className="flex-1 px-4" contentContainerClassName="gap-4 py-4">
+        <ScrollView
+          className="flex-1 px-4"
+          contentContainerClassName="gap-4 py-4"
+          keyboardShouldPersistTaps="handled">
           <View>
             <Text className="mb-1 text-xs font-semibold text-slate-500">Fecha</Text>
             <Pressable
@@ -225,6 +230,6 @@ export default function NuevaCompraScreen() {
           </Pressable>
         </View>
       </SafeAreaView>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
