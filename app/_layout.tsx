@@ -1,3 +1,4 @@
+import { MaterialIcons } from '@expo/vector-icons';
 import { useFonts } from 'expo-font';
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -21,8 +22,13 @@ export const unstable_settings = {
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
+  // MaterialIcons se precarga acá en vez de dejar que cada <MaterialIcons>
+  // la cargue sola al montarse (comportamiento default de @expo/vector-icons):
+  // esa carga async por-ícono se quedó colgada en un celular real, dejando
+  // el tab bar con íconos en blanco para siempre sin ningún error visible.
   const [loaded, error] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
+    ...MaterialIcons.font,
   });
 
   // Expo Router uses Error Boundaries to catch errors in the navigation tree.
