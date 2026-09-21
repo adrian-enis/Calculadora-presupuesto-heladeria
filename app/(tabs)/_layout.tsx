@@ -27,7 +27,7 @@ function TabPill({
 }) {
   return (
     <View
-      className={`items-center justify-center gap-0.5 rounded-2xl px-4 ${showLabel ? 'py-1.5' : 'py-2'} ${focused ? 'bg-primary-500' : ''}`}>
+      className={`items-center justify-center gap-0.5 rounded-2xl px-4 ${showLabel ? 'py-1' : 'py-1.5'} ${focused ? 'bg-primary-500' : ''}`}>
       <MaterialIcons name={icon} size={24} color={focused ? '#022c22' : '#64748b'} />
       {showLabel && (
         <Text className={`text-xs font-semibold ${focused ? 'text-emerald-950' : 'text-slate-600'}`}>{label}</Text>
@@ -51,7 +51,7 @@ export default function TabLayout() {
         tabBarShowLabel: false,
         tabBarActiveTintColor: '#022c22',
         tabBarStyle: {
-          height: (showLabel ? 56 : 48) + insets.bottom,
+          height: (showLabel ? 64 : 52) + insets.bottom,
           paddingTop: 8,
           paddingBottom: insets.bottom,
           backgroundColor: '#e2e8f0',
