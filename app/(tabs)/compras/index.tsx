@@ -21,10 +21,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import type { CompraListada } from '@/features/compras/compra.repository';
 import { useCompras } from '@/features/compras/useCompras';
 import { useInsumos } from '@/features/insumos/useInsumos';
-
-function formatearFecha(fechaIso: string): string {
-  return new Date(fechaIso).toLocaleDateString('es-AR', { day: '2-digit', month: 'long', year: 'numeric' });
-}
+import { formatearFecha } from '@/lib/fecha';
 
 function CompraCard({ compra, onEliminar }: { compra: CompraListada; onEliminar: (compraId: number) => void }) {
   const total = compra.items.reduce((suma, item) => suma + item.precio, 0);

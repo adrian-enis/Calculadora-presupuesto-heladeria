@@ -20,6 +20,8 @@ import type { ComponentProps } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { TopAppBar } from '@/components/ui/TopAppBar';
+
 type MaterialIconName = ComponentProps<typeof MaterialIcons>['name'];
 
 function QuickAction({
@@ -82,13 +84,7 @@ function AccionRecienteItem({
 export default function HomeScreen() {
   return (
     <SafeAreaView edges={['top']} className="flex-1 bg-slate-50">
-      <View className="h-12 w-full flex-row items-center justify-between bg-white px-4 shadow-sm">
-        <View className="flex-row items-center gap-2">
-          <MaterialIcons name="calendar-today" size={20} color="#047857" />
-          <Text className="text-xl font-bold text-primary-700">Heladería Dibuluc</Text>
-        </View>
-        <MaterialIcons name="account-circle" size={26} color="#047857" />
-      </View>
+      <TopAppBar />
 
       <ScrollView className="flex-1 px-4" contentContainerClassName="gap-6 pb-6 pt-4">
         <View className="flex-row items-center gap-1">
