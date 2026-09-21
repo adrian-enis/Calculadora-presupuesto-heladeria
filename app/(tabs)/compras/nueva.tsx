@@ -84,7 +84,7 @@ export default function NuevaCompraScreen() {
       className="flex-1 items-center justify-center bg-black/40 p-4">
       <SafeAreaView
         edges={['bottom']}
-        className="max-h-[90%] w-full max-w-lg overflow-hidden rounded-xl bg-white shadow-lg">
+        className="h-[85%] w-full max-w-lg overflow-hidden rounded-xl bg-white shadow-lg">
         <View className="flex-row items-center justify-between border-b border-slate-100 p-4">
           <Text className="text-lg font-bold text-slate-900">Registrar Nueva Compra</Text>
           <Pressable hitSlop={8} onPress={() => router.back()}>

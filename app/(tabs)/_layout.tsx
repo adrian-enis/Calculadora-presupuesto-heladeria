@@ -1,6 +1,7 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import { Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type IconName = keyof typeof MaterialIcons.glyphMap;
 
@@ -19,6 +20,11 @@ function TabPill({ focused, icon, label }: { focused: boolean; icon: IconName; l
 }
 
 export default function TabLayout() {
+  // tabBarStyle con height fijo pisa el cálculo automático de inset que hace
+  // React Navigation — sin sumar insets.bottom, el bottom nav gestual de
+  // Android tapa/corta la barra (bug reportado en dispositivo real).
+  const insets = useSafeAreaInsets();
+
   return (
     <Tabs
       screenOptions={{
@@ -26,8 +32,9 @@ export default function TabLayout() {
         tabBarShowLabel: false,
         tabBarActiveTintColor: '#022c22',
         tabBarStyle: {
-          height: 64,
+          height: 56 + insets.bottom,
           paddingTop: 8,
+          paddingBottom: insets.bottom,
           backgroundColor: '#e2e8f0',
           borderTopWidth: 0,
         },
