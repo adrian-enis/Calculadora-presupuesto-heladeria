@@ -5,15 +5,18 @@
  * lib/inventario.ts) — es una proyección con el costo_promedio actual de
  * cada insumo, no el costo_lote real de una Producción concreta.
  *
- * "Nueva Receta", "Editar" y "Producir" quedan sin acción: cada una necesita
- * su propia pantalla/formulario que todavía no tiene diseño. "⋮" sí está
- * cableado (desactivarReceta, HU 3.2) porque no requiere una pantalla nueva.
+ * "Nueva Receta" abre app/(tabs)/recetas/nueva.tsx (HU 3.1a). "Editar" y
+ * "Producir" siguen sin acción: cada una necesita su propia
+ * pantalla/formulario que todavía no tiene diseño. "⋮" sí está cableado
+ * (desactivarReceta, HU 3.2) porque no requiere una pantalla nueva.
  */
 
 import { MaterialIcons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { TopAppBar } from '@/components/ui/TopAppBar';
 import { useRecetas } from '@/features/recetas/useRecetas';
 import type { RecetaConCosto } from '@/features/recetas/receta.service';
 
@@ -95,11 +98,7 @@ export default function RecetasScreen() {
 
   return (
     <SafeAreaView edges={['top']} className="flex-1 bg-slate-50">
-      <View className="h-12 w-full flex-row items-center justify-between bg-white px-4 shadow-sm">
-        <MaterialIcons name="calendar-today" size={22} color="#64748b" />
-        <Text className="text-lg font-bold text-primary-700">Heladería Dibuluc</Text>
-        <MaterialIcons name="account-circle" size={26} color="#64748b" />
-      </View>
+      <TopAppBar />
 
       <ScrollView className="flex-1 px-4" contentContainerClassName="gap-4 pb-6 pt-4">
         <View className="flex-row items-end justify-between">
@@ -107,7 +106,9 @@ export default function RecetasScreen() {
             <Text className="text-2xl font-bold text-slate-900">Recetas</Text>
             <Text className="mt-0.5 text-sm text-slate-500">Gestiona tus fórmulas y costos</Text>
           </View>
-          <Pressable className="h-12 flex-row items-center gap-1 rounded-full bg-primary-500 px-4 shadow-sm active:bg-primary-600">
+          <Pressable
+            onPress={() => router.push('/recetas/nueva')}
+            className="h-12 flex-row items-center gap-1 rounded-full bg-primary-500 px-4 shadow-sm active:bg-primary-600">
             <MaterialIcons name="add" size={20} color="#ffffff" />
             <Text className="font-semibold text-white">Nueva Receta</Text>
           </Pressable>
