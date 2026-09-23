@@ -1,37 +1,28 @@
-import { MaterialIcons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
-import { Text, View, useWindowDimensions } from 'react-native';
+import type { ComponentType } from 'react';
+import { View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-type IconName = keyof typeof MaterialIcons.glyphMap;
+import { HistoryIcon, HomeIcon, InsumosIcon, RecetasIcon } from '@/components/ui/TabBarIcon';
 
 // Por debajo de este ancho el label no entra junto al icono en los 4 tabs
 // (probado en celulares reales angostos) — se muestra solo el icono.
 const NARROW_SCREEN_WIDTH = 360;
 
 /**
- * Ícono arriba, label abajo (no lado a lado) — así entran los 4 con texto
- * en pantallas angostas de celular real. El bug anterior era horizontal
- * (icono+texto en fila), no que el texto no cupiera.
+ * Ícono en un pill que se colorea al enfocar. El label NO se renderiza acá:
+ * cualquier <Text> dentro de tabBarIcon (este slot) se mide con ancho
+ * colapsado (~7px) en Expo Go 57.0.9 + bottom-tabs animado con
+ * Reanimated/Fabric — bug del cliente, no del código. El ícono pasó de
+ * MaterialIcons (font) a SVG (react-native-svg) porque tampoco se libra de
+ * ese bug al ser un glyph de fuente. El label usa el mecanismo nativo de
+ * bottom-tabs (tabBarLabel/tabBarShowLabel), un path de renderizado
+ * distinto que no pasa por este slot y no sufre el bug.
  */
-function TabPill({
-  focused,
-  icon,
-  label,
-  showLabel,
-}: {
-  focused: boolean;
-  icon: IconName;
-  label: string;
-  showLabel: boolean;
-}) {
+function IconPill({ focused, Icon }: { focused: boolean; Icon: ComponentType<{ color: string; size?: number }> }) {
   return (
-    <View
-      className={`items-center justify-center gap-0.5 rounded-2xl px-4 ${showLabel ? 'py-1' : 'py-1.5'} ${focused ? 'bg-primary-500' : ''}`}>
-      <MaterialIcons name={icon} size={24} color={focused ? '#022c22' : '#64748b'} />
-      {showLabel && (
-        <Text className={`text-xs font-semibold ${focused ? 'text-emerald-950' : 'text-slate-600'}`}>{label}</Text>
-      )}
+    <View className={`h-9 w-14 items-center justify-center rounded-2xl ${focused ? 'bg-primary-500' : ''}`}>
+      <Icon color={focused ? '#022c22' : '#64748b'} size={24} />
     </View>
   );
 }
@@ -48,8 +39,10 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarShowLabel: false,
+        tabBarShowLabel: showLabel,
         tabBarActiveTintColor: '#022c22',
+        tabBarInactiveTintColor: '#64748b',
+        tabBarLabelStyle: { fontSize: 12, fontWeight: '600' },
         tabBarStyle: {
           height: (showLabel ? 64 : 52) + insets.bottom,
           paddingTop: 8,
@@ -62,34 +55,28 @@ export default function TabLayout() {
         name="index"
         options={{
           title: 'Home',
-          tabBarIcon: ({ focused }) => <TabPill focused={focused} icon="home" label="Home" showLabel={showLabel} />,
+          tabBarIcon: ({ focused }) => <IconPill focused={focused} Icon={HomeIcon} />,
         }}
       />
       <Tabs.Screen
-        name="compras/index"
+        name="compras"
         options={{
           title: 'History',
-          tabBarIcon: ({ focused }) => (
-            <TabPill focused={focused} icon="history" label="History" showLabel={showLabel} />
-          ),
+          tabBarIcon: ({ focused }) => <IconPill focused={focused} Icon={HistoryIcon} />,
         }}
       />
       <Tabs.Screen
         name="insumos/index"
         options={{
           title: 'Insumos',
-          tabBarIcon: ({ focused }) => (
-            <TabPill focused={focused} icon="inventory" label="Insumos" showLabel={showLabel} />
-          ),
+          tabBarIcon: ({ focused }) => <IconPill focused={focused} Icon={InsumosIcon} />,
         }}
       />
       <Tabs.Screen
-        name="recetas/index"
+        name="recetas"
         options={{
           title: 'Recetas',
-          tabBarIcon: ({ focused }) => (
-            <TabPill focused={focused} icon="menu-book" label="Recetas" showLabel={showLabel} />
-          ),
+          tabBarIcon: ({ focused }) => <IconPill focused={focused} Icon={RecetasIcon} />,
         }}
       />
     </Tabs>
