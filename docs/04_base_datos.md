@@ -40,9 +40,13 @@ CREATE TABLE insumos (
   stock_disponible  REAL NOT NULL DEFAULT 0 CHECK (stock_disponible >= 0),
   costo_promedio    REAL NOT NULL DEFAULT 0 CHECK (costo_promedio >= 0),
   valor_total_stock REAL NOT NULL DEFAULT 0,   -- = costo_promedio * stock_disponible, se mantiene aparte para el delta al editar/borrar compras
-  created_at        TEXT NOT NULL DEFAULT (datetime('now'))
+  created_at        TEXT NOT NULL DEFAULT (datetime('now')),
+  nombre_normalizado TEXT NOT NULL DEFAULT ''   -- migración 0002
 );
+
+CREATE UNIQUE INDEX idx_insumos_nombre_normalizado ON insumos(nombre_normalizado);
 ```
+- `nombre_normalizado` es la clave de unicidad real: "Leche" y "leche" son el mismo insumo. Se calcula en `lib/nombres.ts` (trim + minúsculas), no con `COLLATE NOCASE`, porque NOCASE solo ignora mayúsculas ASCII ("Ácido" ≠ "ácido"). Duplicados previos a la migración se renombran a `"<nombre> (<id>)"`, no se fusionan.
 - `unidad_base` se fija en la primera compra y **nunca se edita** (regla: "unidad congelada").
 - `nombre` es editable, es la única columna que puede cambiar retroactivamente (regla: "nombre editable retroactivo").
 - `valor_total_stock` existe específicamente para poder recalcular por delta al editar/borrar una compra sin necesitar el historial completo (ver `01_negocio_reglas.md`, sección 1).
