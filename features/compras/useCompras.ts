@@ -10,7 +10,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import * as compraService from './compra.service';
-import type { CompraListada } from './compra.repository';
+import type { CompraListada } from './compra.service';
 import type { CompraInput, EditarCompraItemInput } from './compra.schema';
 
 const PAGE_SIZE = 10;

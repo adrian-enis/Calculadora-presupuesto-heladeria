@@ -1,155 +1,80 @@
 /**
  * features/compras/compra.repository.ts
  *
- * Único lugar que toca SQLite para Compras. Orquesta la transacción: lee/crea
- * el insumo (insumo.repository.ts), delega el cálculo (conversión de unidad
- * en lib/unidades.ts + fórmula de inventario en lib/inventario.ts), y persiste
- * todo atómico.
+ * SQL puro sobre `compras` y `compra_items`. El orden de las operaciones
+ * (delta en insumos ANTES del delete en cascada, docs/04_base_datos.md) y la
+ * transacción los decide compra.service.ts.
  */
 
-import { getDb } from '@/db/client';
-import { actualizarEstadoInsumo } from '@/features/insumos/insumo.repository';
-import { obtenerOCrearInsumo } from '@/features/insumos/insumo.service';
-import { deshacerEntrada, editarEntrada, registrarEntrada, type EstadoInsumo } from '@/lib/inventario';
-import { convertirACantidadBase } from '@/lib/unidades';
 import type { Unidad } from '@/lib/unidades';
 import type { SQLiteDatabase } from 'expo-sqlite';
-import type { CompraInput, EditarCompraItemInput } from './compra.schema';
 
-function filaAEstado(row: {
-  stock_disponible: number;
-  costo_promedio: number;
-  valor_total_stock: number;
-}): EstadoInsumo {
-  return {
-    stockDisponible: row.stock_disponible,
-    costoPromedio: row.costo_promedio,
-    valorTotalStock: row.valor_total_stock,
-  };
+export interface CompraItemFila {
+  compraId: number;
+  insumoId: number;
+  cantidad: number;
+  unidad: Unidad;
+  cantidadBase: number;
+  precio: number;
 }
 
-async function obtenerInsumoDeItem(
-  db: SQLiteDatabase,
-  compraItemId: number
-): Promise<{ insumoId: number; cantidadBaseVieja: number; precioViejo: number; unidadBase: Unidad; estado: EstadoInsumo } | null> {
-  const row = await db.getFirstAsync<{
-    insumo_id: number;
-    cantidad_base: number;
-    precio: number;
-    unidad_base: Unidad;
-    stock_disponible: number;
-    costo_promedio: number;
-    valor_total_stock: number;
-  }>(
-    `SELECT ci.insumo_id, ci.cantidad_base, ci.precio,
-            i.unidad_base, i.stock_disponible, i.costo_promedio, i.valor_total_stock
-     FROM compra_items ci JOIN insumos i ON i.id = ci.insumo_id
-     WHERE ci.id = ?`,
+/** Lo mínimo para deshacer un item en insumos: qué insumo y cuánto entró a qué precio. */
+export interface CompraItemEntrada {
+  insumoId: number;
+  cantidadBase: number;
+  precio: number;
+}
+
+export async function insertarCompra(db: SQLiteDatabase, fecha: string): Promise<number> {
+  const result = await db.runAsync('INSERT INTO compras (fecha) VALUES (?)', [fecha]);
+  return result.lastInsertRowId;
+}
+
+export async function insertarCompraItem(db: SQLiteDatabase, item: CompraItemFila): Promise<void> {
+  await db.runAsync(
+    `INSERT INTO compra_items (compra_id, insumo_id, cantidad, unidad, cantidad_base, precio)
+     VALUES (?, ?, ?, ?, ?, ?)`,
+    [item.compraId, item.insumoId, item.cantidad, item.unidad, item.cantidadBase, item.precio]
+  );
+}
+
+export async function obtenerCompraItem(db: SQLiteDatabase, compraItemId: number): Promise<CompraItemEntrada | null> {
+  const row = await db.getFirstAsync<{ insumo_id: number; cantidad_base: number; precio: number }>(
+    'SELECT insumo_id, cantidad_base, precio FROM compra_items WHERE id = ?',
     [compraItemId]
   );
-  if (!row) return null;
-
-  return {
-    insumoId: row.insumo_id,
-    cantidadBaseVieja: row.cantidad_base,
-    precioViejo: row.precio,
-    unidadBase: row.unidad_base,
-    estado: filaAEstado(row),
-  };
+  return row ? { insumoId: row.insumo_id, cantidadBase: row.cantidad_base, precio: row.precio } : null;
 }
 
-/**
- * Registra una compra con uno o más items. Si un insumo no existe, se crea
- * (HU 1.1). Todo o nada: si algún item tiene una unidad de categoría distinta
- * a la unidad_base de su insumo, se aborta la transacción entera.
- */
-export async function registrarCompra(input: CompraInput): Promise<{ compraId: number }> {
-  const db = await getDb();
-
-  let compraId = 0;
-
-  await db.withTransactionAsync(async () => {
-    const result = await db.runAsync('INSERT INTO compras (fecha) VALUES (?)', [input.fecha]);
-    compraId = result.lastInsertRowId;
-
-    for (const item of input.items) {
-      const insumo = await obtenerOCrearInsumo(db, item.insumoNombre, item.unidad);
-      const cantidadBase = convertirACantidadBase(item.cantidad, item.unidad, insumo.unidadBase);
-      const estadoNuevo = registrarEntrada(insumo.estado, cantidadBase, item.precio);
-
-      await actualizarEstadoInsumo(db, insumo.id, estadoNuevo);
-      await db.runAsync(
-        `INSERT INTO compra_items (compra_id, insumo_id, cantidad, unidad, cantidad_base, precio)
-         VALUES (?, ?, ?, ?, ?, ?)`,
-        [compraId, insumo.id, item.cantidad, item.unidad, cantidadBase, item.precio]
-      );
-    }
-  });
-
-  return { compraId };
+export async function actualizarCompraItem(
+  db: SQLiteDatabase,
+  compraItemId: number,
+  item: { cantidad: number; unidad: Unidad; cantidadBase: number; precio: number }
+): Promise<void> {
+  await db.runAsync('UPDATE compra_items SET cantidad = ?, unidad = ?, cantidad_base = ?, precio = ? WHERE id = ?', [
+    item.cantidad,
+    item.unidad,
+    item.cantidadBase,
+    item.precio,
+    compraItemId,
+  ]);
 }
 
-/**
- * Corrige cantidad/unidad/precio de un item ya cargado (HU 1.2): deshace el
- * valor viejo y aplica el nuevo en un solo delta sobre costo_promedio. No
- * toca costo_lote de producciones pasadas — ese valor queda congelado.
- */
-export async function editarCompraItem(compraItemId: number, input: EditarCompraItemInput): Promise<void> {
-  const db = await getDb();
-
-  await db.withTransactionAsync(async () => {
-    const anterior = await obtenerInsumoDeItem(db, compraItemId);
-    if (!anterior) throw new Error(`El item de compra ${compraItemId} no existe`);
-
-    const cantidadBaseNueva = convertirACantidadBase(input.cantidad, input.unidad, anterior.unidadBase);
-    const estadoNuevo = editarEntrada(
-      anterior.estado,
-      anterior.cantidadBaseVieja,
-      anterior.precioViejo,
-      cantidadBaseNueva,
-      input.precio
-    );
-
-    await actualizarEstadoInsumo(db, anterior.insumoId, estadoNuevo);
-    await db.runAsync('UPDATE compra_items SET cantidad = ?, unidad = ?, cantidad_base = ?, precio = ? WHERE id = ?', [
-      input.cantidad,
-      input.unidad,
-      cantidadBaseNueva,
-      input.precio,
-      compraItemId,
-    ]);
-  });
+export async function existeCompra(db: SQLiteDatabase, compraId: number): Promise<boolean> {
+  return (await db.getFirstAsync<{ id: number }>('SELECT id FROM compras WHERE id = ?', [compraId])) !== null;
 }
 
-/**
- * Hard delete de una compra completa (HU 1.3): deshace el stock de cada item
- * antes de borrar, y el ON DELETE CASCADE se encarga de compra_items.
- */
-export async function eliminarCompra(compraId: number): Promise<void> {
-  const db = await getDb();
+export async function listarItemsDeCompra(db: SQLiteDatabase, compraId: number): Promise<CompraItemEntrada[]> {
+  const rows = await db.getAllAsync<{ insumo_id: number; cantidad_base: number; precio: number }>(
+    'SELECT insumo_id, cantidad_base, precio FROM compra_items WHERE compra_id = ?',
+    [compraId]
+  );
+  return rows.map((r) => ({ insumoId: r.insumo_id, cantidadBase: r.cantidad_base, precio: r.precio }));
+}
 
-  await db.withTransactionAsync(async () => {
-    const items = await db.getAllAsync<{ insumo_id: number; cantidad_base: number; precio: number }>(
-      'SELECT insumo_id, cantidad_base, precio FROM compra_items WHERE compra_id = ?',
-      [compraId]
-    );
-
-    const compra = await db.getFirstAsync<{ id: number }>('SELECT id FROM compras WHERE id = ?', [compraId]);
-    if (!compra) throw new Error(`La compra ${compraId} no existe`);
-
-    for (const item of items) {
-      const row = await db.getFirstAsync<{ stock_disponible: number; costo_promedio: number; valor_total_stock: number }>(
-        'SELECT stock_disponible, costo_promedio, valor_total_stock FROM insumos WHERE id = ?',
-        [item.insumo_id]
-      );
-      if (!row) throw new Error(`Insumo ${item.insumo_id} no existe`);
-
-      const estadoNuevo = deshacerEntrada(filaAEstado(row), item.cantidad_base, item.precio);
-      await actualizarEstadoInsumo(db, item.insumo_id, estadoNuevo);
-    }
-
-    await db.runAsync('DELETE FROM compras WHERE id = ?', [compraId]);
-  });
+/** Hard delete: ON DELETE CASCADE se lleva los compra_items. */
+export async function borrarCompra(db: SQLiteDatabase, compraId: number): Promise<void> {
+  await db.runAsync('DELETE FROM compras WHERE id = ?', [compraId]);
 }
 
 export interface CompraListada {
@@ -159,9 +84,7 @@ export interface CompraListada {
 }
 
 /** Historial de compras paginado, más reciente primero (HU 1.4). */
-export async function listarCompras(limit: number, offset: number): Promise<CompraListada[]> {
-  const db = await getDb();
-
+export async function listarCompras(db: SQLiteDatabase, limit: number, offset: number): Promise<CompraListada[]> {
   const compras = await db.getAllAsync<{ id: number; fecha: string }>(
     'SELECT id, fecha FROM compras ORDER BY fecha DESC, id DESC LIMIT ? OFFSET ?',
     [limit, offset]

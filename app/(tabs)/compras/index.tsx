@@ -18,7 +18,7 @@ import { useMemo, useState } from 'react';
 import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import type { CompraListada } from '@/features/compras/compra.repository';
+import type { CompraListada } from '@/features/compras/compra.service';
 import { useCompras } from '@/features/compras/useCompras';
 import { useInsumos } from '@/features/insumos/useInsumos';
 import { formatearFecha } from '@/lib/fecha';
