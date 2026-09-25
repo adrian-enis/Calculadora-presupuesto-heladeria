@@ -16,8 +16,12 @@ CREATE TABLE IF NOT EXISTS insumos (
   stock_disponible    REAL NOT NULL DEFAULT 0 CHECK (stock_disponible >= 0),
   costo_promedio      REAL NOT NULL DEFAULT 0 CHECK (costo_promedio >= 0),
   valor_total_stock   REAL NOT NULL DEFAULT 0,
-  created_at          TEXT NOT NULL DEFAULT (datetime('now'))
+  created_at          TEXT NOT NULL DEFAULT (datetime('now')),
+  -- 0002: clave de unicidad sin mayúsculas, la calcula lib/nombres.ts (no NOCASE: solo pliega ASCII)
+  nombre_normalizado  TEXT NOT NULL DEFAULT ''
 );
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_insumos_nombre_normalizado ON insumos(nombre_normalizado);
 
 -- ============================================================
 -- COMPRAS

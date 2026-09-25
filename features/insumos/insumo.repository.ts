@@ -7,6 +7,7 @@
 
 import { getDb } from '@/db/client';
 import type { EstadoInsumo } from '@/lib/inventario';
+import { normalizarNombre } from '@/lib/nombres';
 import type { Unidad } from '@/lib/unidades';
 import type { SQLiteDatabase } from 'expo-sqlite';
 
@@ -35,8 +36,8 @@ export async function buscarInsumoPorNombre(db: SQLiteDatabase, nombre: string):
     stock_disponible: number;
     costo_promedio: number;
     valor_total_stock: number;
-  }>('SELECT id, unidad_base, stock_disponible, costo_promedio, valor_total_stock FROM insumos WHERE nombre = ?', [
-    nombre,
+  }>('SELECT id, unidad_base, stock_disponible, costo_promedio, valor_total_stock FROM insumos WHERE nombre_normalizado = ?', [
+    normalizarNombre(nombre),
   ]);
   return row ? { id: row.id, unidadBase: row.unidad_base, estado: filaAEstado(row) } : null;
 }
@@ -50,8 +51,9 @@ export async function obtenerOCrearInsumo(
   const existente = await buscarInsumoPorNombre(db, nombre);
   if (existente) return existente;
 
-  const result = await db.runAsync('INSERT INTO insumos (nombre, unidad_base) VALUES (?, ?)', [
+  const result = await db.runAsync('INSERT INTO insumos (nombre, nombre_normalizado, unidad_base) VALUES (?, ?, ?)', [
     nombre,
+    normalizarNombre(nombre),
     unidadSolicitada,
   ]);
 
@@ -120,7 +122,19 @@ export async function listarInsumos(): Promise<InsumoListado[]> {
  */
 export async function editarNombreInsumo(insumoId: number, nombre: string): Promise<void> {
   const db = await getDb();
-  const result = await db.runAsync('UPDATE insumos SET nombre = ? WHERE id = ?', [nombre, insumoId]);
+  const normalizado = normalizarNombre(nombre);
+  // Chequeo previo solo para dar un mensaje claro; el índice único es el gate real.
+  const otro = await db.getFirstAsync<{ id: number }>(
+    'SELECT id FROM insumos WHERE nombre_normalizado = ? AND id != ?',
+    [normalizado, insumoId]
+  );
+  if (otro) throw new Error(`Ya existe un insumo llamado "${nombre}"`);
+
+  const result = await db.runAsync('UPDATE insumos SET nombre = ?, nombre_normalizado = ? WHERE id = ?', [
+    nombre,
+    normalizado,
+    insumoId,
+  ]);
   if (result.changes === 0) {
     throw new Error(`Insumo ${insumoId} no existe`);
   }

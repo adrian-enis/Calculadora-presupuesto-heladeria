@@ -1,4 +1,5 @@
 import { migration0001Initial } from './0001_initial';
+import { migration0002InsumosNombreNormalizado } from './0002_insumos_nombre_normalizado';
 import type { Migration } from './types';
 
 /**
@@ -6,6 +7,6 @@ import type { Migration } from './types';
  * NNNN_nombre.ts con version = NNNN (siguiente correlativo, nunca reutilizar
  * ni reordenar un version ya publicado) y sumarlo acá al final de la lista.
  */
-export const migrations: Migration[] = [migration0001Initial];
+export const migrations: Migration[] = [migration0001Initial, migration0002InsumosNombreNormalizado];
 
 export type { Migration };

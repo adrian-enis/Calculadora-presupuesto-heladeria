@@ -20,6 +20,7 @@ import { UnidadPicker } from '@/components/ui/UnidadPicker';
 import { RecetaIngredienteSchema, type RecetaIngredienteInput } from '@/features/recetas/receta.schema';
 import { useInsumos } from '@/features/insumos/useInsumos';
 import { useRecetas } from '@/features/recetas/useRecetas';
+import { normalizarNombre } from '@/lib/nombres';
 import type { Unidad } from '@/lib/unidades';
 
 export default function NuevaRecetaScreen() {
@@ -47,12 +48,12 @@ export default function NuevaRecetaScreen() {
       Alert.alert('Revisá el ingrediente', resultado.error.issues[0]?.message ?? 'Datos inválidos');
       return;
     }
-    const nombreBuscado = resultado.data.insumoNombre.toLowerCase();
-    if (!insumos.some((i) => i.nombre.toLowerCase() === nombreBuscado)) {
+    const nombreBuscado = normalizarNombre(resultado.data.insumoNombre);
+    if (!insumos.some((i) => normalizarNombre(i.nombre) === nombreBuscado)) {
       Alert.alert('Insumo inexistente', `"${resultado.data.insumoNombre}" no está registrado. Cargalo primero con una compra.`);
       return;
     }
-    if (ingredientes.some((i) => i.insumoNombre.toLowerCase() === resultado.data.insumoNombre.toLowerCase())) {
+    if (ingredientes.some((i) => normalizarNombre(i.insumoNombre) === nombreBuscado)) {
       Alert.alert('Ingrediente repetido', 'Ese insumo ya está en la receta.');
       return;
     }

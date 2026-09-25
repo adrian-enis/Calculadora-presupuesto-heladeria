@@ -1,3 +1,4 @@
+import { normalizarNombre } from '@/lib/nombres';
 import { UNIDADES } from '@/lib/unidades';
 import { z } from 'zod';
 
@@ -8,7 +9,7 @@ export const RecetaIngredienteSchema = z.object({
 });
 
 function sinIngredientesDuplicados(ingredientes: { insumoNombre: string }[]): boolean {
-  const nombres = ingredientes.map((i) => i.insumoNombre.toLowerCase());
+  const nombres = ingredientes.map((i) => normalizarNombre(i.insumoNombre));
   return new Set(nombres).size === nombres.length;
 }
 
