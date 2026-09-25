@@ -86,8 +86,12 @@ export function costoDeConsumo(estado: EstadoInsumo, cantidad: number): number {
  * stock se agote: ahí todo queda en 0, igual que en normalizarEstado).
  * Lanza error si no hay stock suficiente (regla: producción se bloquea).
  */
+export function hayStockSuficiente(estado: EstadoInsumo, cantidad: number): boolean {
+  return cantidad <= estado.stockDisponible + EPSILON_STOCK;
+}
+
 export function consumirStock(estado: EstadoInsumo, cantidadUsada: number): EstadoInsumo {
-  if (cantidadUsada > estado.stockDisponible) {
+  if (!hayStockSuficiente(estado, cantidadUsada)) {
     throw new Error(
       `Stock insuficiente: se necesitan ${cantidadUsada}, hay ${estado.stockDisponible} disponibles`
     );

@@ -6,7 +6,7 @@
  * los datos listos para persistir. Esto lo hace testeable sin mockear la DB.
  */
 
-import { consumirStock, costoDeConsumo, type EstadoInsumo } from '@/lib/inventario';
+import { consumirStock, costoDeConsumo, hayStockSuficiente, type EstadoInsumo } from '@/lib/inventario';
 
 export interface IngredienteReceta {
   insumoId: number;
@@ -48,7 +48,7 @@ export function calcularConsumosProduccion(
       throw new Error(`Insumo ${ingrediente.insumoId} de la receta no tiene estado cargado`);
     }
 
-    if (ingrediente.cantidad > estadoActual.stockDisponible) {
+    if (!hayStockSuficiente(estadoActual, ingrediente.cantidad)) {
       throw new Error(
         `Stock insuficiente del insumo ${ingrediente.insumoId}: se necesitan ${ingrediente.cantidad}, ` +
           `hay ${estadoActual.stockDisponible} disponibles`
