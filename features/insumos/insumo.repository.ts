@@ -1,11 +1,11 @@
 /**
  * features/insumos/insumo.repository.ts
  *
- * Helpers de SQLite sobre `insumos` compartidos por Compra y Receta (Compra
- * busca o crea por nombre; Receta solo busca — ver obtenerOCrearInsumo).
+ * SQL puro sobre `insumos`, sin reglas de negocio: quién puede crear un insumo
+ * o renombrarlo lo decide insumo.service.ts. Recibe `db` para poder correr
+ * dentro de la transacción del service que lo llama (compras, recetas, producciones).
  */
 
-import { getDb } from '@/db/client';
 import type { EstadoInsumo } from '@/lib/inventario';
 import { normalizarNombre } from '@/lib/nombres';
 import type { Unidad } from '@/lib/unidades';
@@ -17,65 +17,53 @@ export interface InsumoConEstado {
   estado: EstadoInsumo;
 }
 
-function filaAEstado(row: {
+interface FilaInsumoConEstado {
+  id: number;
+  unidad_base: Unidad;
   stock_disponible: number;
   costo_promedio: number;
   valor_total_stock: number;
-}): EstadoInsumo {
+}
+
+function filaAInsumoConEstado(row: FilaInsumoConEstado): InsumoConEstado {
   return {
-    stockDisponible: row.stock_disponible,
-    costoPromedio: row.costo_promedio,
-    valorTotalStock: row.valor_total_stock,
+    id: row.id,
+    unidadBase: row.unidad_base,
+    estado: {
+      stockDisponible: row.stock_disponible,
+      costoPromedio: row.costo_promedio,
+      valorTotalStock: row.valor_total_stock,
+    },
   };
 }
 
 export async function buscarInsumoPorNombre(db: SQLiteDatabase, nombre: string): Promise<InsumoConEstado | null> {
-  const row = await db.getFirstAsync<{
-    id: number;
-    unidad_base: Unidad;
-    stock_disponible: number;
-    costo_promedio: number;
-    valor_total_stock: number;
-  }>('SELECT id, unidad_base, stock_disponible, costo_promedio, valor_total_stock FROM insumos WHERE nombre_normalizado = ?', [
-    normalizarNombre(nombre),
-  ]);
-  return row ? { id: row.id, unidadBase: row.unidad_base, estado: filaAEstado(row) } : null;
-}
-
-/** Solo Compra crea insumos (HU 1.1); Receta únicamente referencia los ya comprados. */
-export async function obtenerOCrearInsumo(
-  db: SQLiteDatabase,
-  nombre: string,
-  unidadSolicitada: Unidad
-): Promise<InsumoConEstado> {
-  const existente = await buscarInsumoPorNombre(db, nombre);
-  if (existente) return existente;
-
-  const result = await db.runAsync('INSERT INTO insumos (nombre, nombre_normalizado, unidad_base) VALUES (?, ?, ?)', [
-    nombre,
-    normalizarNombre(nombre),
-    unidadSolicitada,
-  ]);
-
-  return {
-    id: result.lastInsertRowId,
-    unidadBase: unidadSolicitada,
-    estado: { stockDisponible: 0, costoPromedio: 0, valorTotalStock: 0 },
-  };
+  const row = await db.getFirstAsync<FilaInsumoConEstado>(
+    'SELECT id, unidad_base, stock_disponible, costo_promedio, valor_total_stock FROM insumos WHERE nombre_normalizado = ?',
+    [normalizarNombre(nombre)]
+  );
+  return row ? filaAInsumoConEstado(row) : null;
 }
 
 export async function obtenerEstadoInsumo(db: SQLiteDatabase, insumoId: number): Promise<InsumoConEstado | null> {
-  const row = await db.getFirstAsync<{
-    id: number;
-    unidad_base: Unidad;
-    stock_disponible: number;
-    costo_promedio: number;
-    valor_total_stock: number;
-  }>('SELECT id, unidad_base, stock_disponible, costo_promedio, valor_total_stock FROM insumos WHERE id = ?', [
-    insumoId,
+  const row = await db.getFirstAsync<FilaInsumoConEstado>(
+    'SELECT id, unidad_base, stock_disponible, costo_promedio, valor_total_stock FROM insumos WHERE id = ?',
+    [insumoId]
+  );
+  return row ? filaAInsumoConEstado(row) : null;
+}
+
+export async function insertarInsumo(db: SQLiteDatabase, nombre: string, unidadBase: Unidad): Promise<InsumoConEstado> {
+  const result = await db.runAsync('INSERT INTO insumos (nombre, nombre_normalizado, unidad_base) VALUES (?, ?, ?)', [
+    nombre,
+    normalizarNombre(nombre),
+    unidadBase,
   ]);
-  if (!row) return null;
-  return { id: row.id, unidadBase: row.unidad_base, estado: filaAEstado(row) };
+  return {
+    id: result.lastInsertRowId,
+    unidadBase,
+    estado: { stockDisponible: 0, costoPromedio: 0, valorTotalStock: 0 },
+  };
 }
 
 export async function actualizarEstadoInsumo(db: SQLiteDatabase, insumoId: number, estado: EstadoInsumo): Promise<void> {
@@ -87,6 +75,16 @@ export async function actualizarEstadoInsumo(db: SQLiteDatabase, insumoId: numbe
   ]);
 }
 
+/** Devuelve false si el insumo no existe. unidad_base es congelada: a propósito no hay actualizarUnidad. */
+export async function actualizarNombreInsumo(db: SQLiteDatabase, insumoId: number, nombre: string): Promise<boolean> {
+  const result = await db.runAsync('UPDATE insumos SET nombre = ?, nombre_normalizado = ? WHERE id = ?', [
+    nombre,
+    normalizarNombre(nombre),
+    insumoId,
+  ]);
+  return result.changes > 0;
+}
+
 export interface InsumoListado {
   id: number;
   nombre: string;
@@ -95,9 +93,8 @@ export interface InsumoListado {
   costoPromedio: number;
 }
 
-/** Lista todos los insumos, incluso sin stock (HU 2.1: no desaparecen). */
-export async function listarInsumos(): Promise<InsumoListado[]> {
-  const db = await getDb();
+/** Todos los insumos, incluso sin stock (HU 2.1: no desaparecen). */
+export async function listarInsumos(db: SQLiteDatabase): Promise<InsumoListado[]> {
   const rows = await db.getAllAsync<{
     id: number;
     nombre: string;
@@ -113,29 +110,4 @@ export async function listarInsumos(): Promise<InsumoListado[]> {
     stockDisponible: r.stock_disponible,
     costoPromedio: r.costo_promedio,
   }));
-}
-
-/**
- * Corrige el nombre de un insumo (HU 2.2), retroactivo a compras/recetas
- * pasadas porque esas tablas solo guardan insumo_id. unidad_base es congelada:
- * a propósito no existe un editarUnidadInsumo().
- */
-export async function editarNombreInsumo(insumoId: number, nombre: string): Promise<void> {
-  const db = await getDb();
-  const normalizado = normalizarNombre(nombre);
-  // Chequeo previo solo para dar un mensaje claro; el índice único es el gate real.
-  const otro = await db.getFirstAsync<{ id: number }>(
-    'SELECT id FROM insumos WHERE nombre_normalizado = ? AND id != ?',
-    [normalizado, insumoId]
-  );
-  if (otro) throw new Error(`Ya existe un insumo llamado "${nombre}"`);
-
-  const result = await db.runAsync('UPDATE insumos SET nombre = ?, nombre_normalizado = ? WHERE id = ?', [
-    nombre,
-    normalizado,
-    insumoId,
-  ]);
-  if (result.changes === 0) {
-    throw new Error(`Insumo ${insumoId} no existe`);
-  }
 }

@@ -8,7 +8,8 @@
  */
 
 import { getDb } from '@/db/client';
-import { actualizarEstadoInsumo, obtenerOCrearInsumo } from '@/features/insumos/insumo.repository';
+import { actualizarEstadoInsumo } from '@/features/insumos/insumo.repository';
+import { obtenerOCrearInsumo } from '@/features/insumos/insumo.service';
 import { deshacerEntrada, editarEntrada, registrarEntrada, type EstadoInsumo } from '@/lib/inventario';
 import { convertirACantidadBase } from '@/lib/unidades';
 import type { Unidad } from '@/lib/unidades';

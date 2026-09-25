@@ -17,7 +17,7 @@ import { Alert, Modal, Pressable, ScrollView, Text, TextInput, View } from 'reac
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { TopAppBar } from '@/components/ui/TopAppBar';
-import type { InsumoListado } from '@/features/insumos/insumo.repository';
+import type { InsumoListado } from '@/features/insumos/insumo.service';
 import { useInsumos } from '@/features/insumos/useInsumos';
 
 function formatearCosto(costo: number): string {

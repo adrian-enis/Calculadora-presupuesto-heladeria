@@ -8,7 +8,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import * as insumoService from './insumo.service';
-import type { InsumoListado } from './insumo.repository';
+import type { InsumoListado } from './insumo.service';
 import type { EditarNombreInsumoInput } from './insumo.schema';
 
 export function useInsumos() {

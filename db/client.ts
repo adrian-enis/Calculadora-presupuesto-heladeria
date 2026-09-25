@@ -28,3 +28,17 @@ export async function getDb(): Promise<SQLite.SQLiteDatabase> {
 
   return initPromise;
 }
+
+/**
+ * Unidad de trabajo de los services: abre la transacción y le pasa `db` a cada
+ * repository, que así queda como SQL puro sin decidir sus propios límites
+ * transaccionales. Si `fn` lanza, se hace rollback de todo.
+ */
+export async function enTransaccion<T>(fn: (db: SQLite.SQLiteDatabase) => Promise<T>): Promise<T> {
+  const db = await getDb();
+  let resultado: T | undefined;
+  await db.withTransactionAsync(async () => {
+    resultado = await fn(db);
+  });
+  return resultado as T;
+}
