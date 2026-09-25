@@ -78,7 +78,9 @@ db/
 
 lib/
   costos.ts                      # Funciones puras: costoUnitario(), ganancia(), margen()
-  inventario.ts                  # Funciones puras: nuevoCostoPromedio(), aplicarDelta()
+  inventario.ts                  # Funciones puras: registrarEntrada(), deshacerEntrada(), consumirStock()
+  produccion.ts                  # Función pura: calcularConsumosProduccion() (costo_lote + stock resultante)
+  nombres.ts                     # normalizarNombre(): clave de unicidad de insumos sin mayúsculas
   unidades.ts                    # Conversión de unidades (L→ml) y validación de categorías
 
 types/
@@ -94,8 +96,15 @@ types/
 | `lib/inventario.ts` | Fórmulas puras de costo promedio ponderado | `nuevoCostoPromedio(stockActual, costoActual, cantComprada, precioCompra)` |
 | `lib/costos.ts` | Fórmulas de costo unitario / ganancia / margen | `costoUnitario(costoLote, producidos)` |
 | `features/compras/compra.service.ts` | Orquesta: crear/editar/borrar compra + delta en insumo | Usa `lib/inventario.ts`, nunca reimplementa la fórmula |
-| `features/producciones/produccion.service.ts` | Valida stock suficiente, congela `costo_lote`, valida `vendidos + merma <= producidos` | Regla crítica de Producción |
+| `lib/produccion.ts` | Cálculo puro del lote: consumos, `costo_lote`, bloqueo por stock insuficiente | Regla crítica de Producción |
+| `features/producciones/produccion.service.ts` | Orquesta: receta activa, lee stock, usa `lib/produccion.ts`, persiste el snapshot; valida `vendidos + merma <= producidos` con Zod | Regla crítica de Producción |
 | `features/recetas/receta.service.ts` | `puedeEditarse(recetaId)` → chequea si tiene producciones asociadas | Regla HU 3.1b |
+
+### Responsabilidades por capa (cómo está implementado)
+
+- **Repository = SQL puro.** Cada función recibe `db: SQLiteDatabase` como primer parámetro y solo lee/escribe filas: sin Zod, sin reglas, sin cálculos, sin abrir transacciones. Un service puede usar repositories de otras features (ej. `compra.service` usa `insumo.repository`).
+- **Service = reglas + unidad de trabajo.** Valida con Zod, aplica las reglas de `01_negocio_reglas.md`, llama a `lib/` para los cálculos y abre la transacción con `enTransaccion()` (`db/client.ts`), pasándole el mismo `db` a todos los repositories. Lecturas simples usan `getDb()`.
+- **Hook** llama solo a services; **UI** llama solo a hooks (los tipos de datos también se importan desde el service, no desde el repository).
 
 **Por qué funciones puras en `lib/`:** son las más fáciles de testear (sin mockear SQLite) y las más críticas de tener bien — un error en `nuevoCostoPromedio` afecta todo el negocio.
 

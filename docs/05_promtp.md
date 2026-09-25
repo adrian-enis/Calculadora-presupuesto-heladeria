@@ -72,7 +72,7 @@ const total = a + b;
 Para el MVP no se pide cobertura completa, pero si se agregan tests, priorizar en este orden:
 1. `lib/inventario.ts` (fórmula de costo promedio + delta) — es el corazón del negocio
 2. `lib/costos.ts` (costo unitario, ganancia, margen)
-3. `produccion.service.ts` (validación de stock suficiente, invariante `vendidos + merma <= producidos`)
+3. `lib/produccion.ts` (validación de stock suficiente) y `createVentaMermaSchema` en `produccion.schema.ts` (invariante `vendidos + merma <= producidos`)
 
 Todo lo demás (UI, navegación) se prueba manualmente para este MVP.
 
