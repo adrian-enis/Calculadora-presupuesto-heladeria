@@ -68,6 +68,7 @@ Template reutilizable. Estado: Activo | Inactivo.
 - Dropdown solo muestra Activas
 - Inactivas quedan en historial (auditoría)
 - La receta **no consume stock** por sí sola — solo se consume al ejecutar una Producción.
+- La receta **no crea insumos**: cada ingrediente debe ser un insumo ya registrado por una Compra. Si no existe, se bloquea el guardado.
 - **Edición de ingredientes:** editable **mientras no haya sido usada en ninguna Producción**. En cuanto se usa por primera vez, sus ingredientes quedan **congelados** para siempre (para no romper el `costo_lote` ya calculado de esa y futuras producciones que la referencien con la misma base). Si se necesita cambiar la fórmula después de haberla usado, se desactiva y se crea una receta nueva.
 
 ---
@@ -132,6 +133,7 @@ Merma = Manual (el usuario declara qué se perdió, no se calcula solo)
 **RECETA:**
 - ✓ Nombre único, ingredientes > 0
 - ✓ Ingredientes no duplicados
+- ✓ Cada ingrediente es un insumo existente (creado por una Compra, nunca por la Receta)
 - ✓ Ingredientes editables solo si la receta nunca fue usada en una Producción; si ya se usó, quedan bloqueados
 
 **PRODUCCIÓN:**

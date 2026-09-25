@@ -111,6 +111,8 @@
   - Entonces la receta queda Activa y disponible para producir
 - Dado que intento agregar el mismo insumo dos veces en la misma receta
   - Entonces el sistema lo bloquea (ingredientes no duplicados)
+- Dado que agrego un insumo que nunca fue comprado
+  - Entonces el sistema lo bloquea y me pide registrarlo primero con una compra (la receta no crea insumos)
 
 ### HU 3.1b — Editar ingredientes de una receta
 **Como** dueña del negocio
