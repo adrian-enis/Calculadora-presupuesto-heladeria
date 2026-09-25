@@ -1,8 +1,8 @@
 /**
  * features/insumos/insumo.repository.ts
  *
- * Helpers de SQLite sobre `insumos` compartidos por Compra y Receta (ambas
- * necesitan "buscar o crear por nombre" y "actualizar estado de inventario").
+ * Helpers de SQLite sobre `insumos` compartidos por Compra y Receta (Compra
+ * busca o crea por nombre; Receta solo busca — ver obtenerOCrearInsumo).
  */
 
 import { getDb } from '@/db/client';
@@ -28,12 +28,8 @@ function filaAEstado(row: {
   };
 }
 
-export async function obtenerOCrearInsumo(
-  db: SQLiteDatabase,
-  nombre: string,
-  unidadSolicitada: Unidad
-): Promise<InsumoConEstado> {
-  const existente = await db.getFirstAsync<{
+export async function buscarInsumoPorNombre(db: SQLiteDatabase, nombre: string): Promise<InsumoConEstado | null> {
+  const row = await db.getFirstAsync<{
     id: number;
     unidad_base: Unidad;
     stock_disponible: number;
@@ -42,10 +38,17 @@ export async function obtenerOCrearInsumo(
   }>('SELECT id, unidad_base, stock_disponible, costo_promedio, valor_total_stock FROM insumos WHERE nombre = ?', [
     nombre,
   ]);
+  return row ? { id: row.id, unidadBase: row.unidad_base, estado: filaAEstado(row) } : null;
+}
 
-  if (existente) {
-    return { id: existente.id, unidadBase: existente.unidad_base, estado: filaAEstado(existente) };
-  }
+/** Solo Compra crea insumos (HU 1.1); Receta únicamente referencia los ya comprados. */
+export async function obtenerOCrearInsumo(
+  db: SQLiteDatabase,
+  nombre: string,
+  unidadSolicitada: Unidad
+): Promise<InsumoConEstado> {
+  const existente = await buscarInsumoPorNombre(db, nombre);
+  if (existente) return existente;
 
   const result = await db.runAsync('INSERT INTO insumos (nombre, unidad_base) VALUES (?, ?)', [
     nombre,

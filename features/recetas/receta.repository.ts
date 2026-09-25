@@ -7,7 +7,7 @@
  */
 
 import { getDb } from '@/db/client';
-import { obtenerOCrearInsumo } from '@/features/insumos/insumo.repository';
+import { buscarInsumoPorNombre } from '@/features/insumos/insumo.repository';
 import { convertirACantidadBase, type Unidad } from '@/lib/unidades';
 import type { SQLiteDatabase } from 'expo-sqlite';
 import type { CrearRecetaInput, EditarIngredientesRecetaInput, RecetaIngredienteInput } from './receta.schema';
@@ -18,7 +18,10 @@ async function insertarIngredientes(
   ingredientes: RecetaIngredienteInput[]
 ): Promise<void> {
   for (const ingrediente of ingredientes) {
-    const insumo = await obtenerOCrearInsumo(db, ingrediente.insumoNombre, ingrediente.unidad);
+    const insumo = await buscarInsumoPorNombre(db, ingrediente.insumoNombre);
+    if (!insumo) {
+      throw new Error(`El insumo "${ingrediente.insumoNombre}" no existe: registralo primero con una compra`);
+    }
     const cantidadBase = convertirACantidadBase(ingrediente.cantidad, ingrediente.unidad, insumo.unidadBase);
 
     await db.runAsync('INSERT INTO receta_ingredientes (receta_id, insumo_id, cantidad) VALUES (?, ?, ?)', [
@@ -38,7 +41,7 @@ export async function tieneProduccionesAsociadas(recetaId: number): Promise<bool
   return row !== null;
 }
 
-/** Crea una receta con sus ingredientes (HU 3.1). Si un insumo no existe, se crea. */
+/** Crea una receta con sus ingredientes (HU 3.1). Todo insumo debe existir (creado por una compra). */
 export async function crearReceta(input: CrearRecetaInput): Promise<{ recetaId: number }> {
   const db = await getDb();
 

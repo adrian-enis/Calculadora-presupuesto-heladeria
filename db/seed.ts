@@ -8,6 +8,10 @@
  *
  * Idempotente por nombre de receta: si ya existe, la salta.
  *
+ * Requisito: todos los insumos de abajo deben existir antes (registrados por
+ * una compra) — una receta nunca crea insumos, y crearReceta falla indicando
+ * cuál falta.
+ *
  * Normalizaciones sobre el texto original:
  * - "Base Cremosa Semi Industrial": la fuente dice "10 g de aceite de girasol",
  *   pero ese insumo ya quedó con unidad_base 'ml' (120 ml en la primera receta)

@@ -6,8 +6,8 @@
  * armó siguiendo el mismo patrón que compras/nueva.tsx: ingredientes en
  * memoria, validados de a uno con RecetaIngredienteSchema para feedback
  * temprano, y CrearRecetaSchema como puerta real al guardar. El insumo es
- * texto libre (no un <select>) por la misma razón que en Nueva Compra: si no
- * existe se crea automáticamente (obtenerOCrearInsumo).
+ * texto libre pero debe existir: los insumos solo nacen de una Compra, la
+ * receta nunca los crea (receta.repository.ts re-valida al guardar).
  */
 
 import { MaterialIcons } from '@expo/vector-icons';
@@ -18,11 +18,13 @@ import { Alert, Pressable, Text, TextInput, View } from 'react-native';
 import { FormModal } from '@/components/ui/FormModal';
 import { UnidadPicker } from '@/components/ui/UnidadPicker';
 import { RecetaIngredienteSchema, type RecetaIngredienteInput } from '@/features/recetas/receta.schema';
+import { useInsumos } from '@/features/insumos/useInsumos';
 import { useRecetas } from '@/features/recetas/useRecetas';
 import type { Unidad } from '@/lib/unidades';
 
 export default function NuevaRecetaScreen() {
   const { crearReceta } = useRecetas();
+  const { insumos } = useInsumos();
 
   const [nombre, setNombre] = useState('');
 
@@ -43,6 +45,11 @@ export default function NuevaRecetaScreen() {
     });
     if (!resultado.success) {
       Alert.alert('Revisá el ingrediente', resultado.error.issues[0]?.message ?? 'Datos inválidos');
+      return;
+    }
+    const nombreBuscado = resultado.data.insumoNombre.toLowerCase();
+    if (!insumos.some((i) => i.nombre.toLowerCase() === nombreBuscado)) {
+      Alert.alert('Insumo inexistente', `"${resultado.data.insumoNombre}" no está registrado. Cargalo primero con una compra.`);
       return;
     }
     if (ingredientes.some((i) => i.insumoNombre.toLowerCase() === resultado.data.insumoNombre.toLowerCase())) {
