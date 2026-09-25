@@ -12,17 +12,31 @@ export interface EstadoInsumo {
   valorTotalStock: number; // = costoPromedio * stockDisponible (se mantiene aparte para los deltas)
 }
 
+// Absorbe residuos de coma flotante (ej: 0.1 + 0.2 - 0.3) al decidir si el stock quedó en 0.
+const EPSILON_STOCK = 1e-9;
+
+/**
+ * Stock en 0 implica valor en 0: lo que se agotó o se borró se lleva su valor.
+ * Sin esto, deshacer/consumir podía dejar "valor fantasma" (stock 0 con valor > 0)
+ * que la próxima compra heredaba, inflando el costo_promedio de producciones futuras.
+ */
+function normalizarEstado(stockDisponible: number, valorTotalStock: number): EstadoInsumo {
+  if (stockDisponible <= EPSILON_STOCK) {
+    return { stockDisponible: 0, costoPromedio: 0, valorTotalStock: 0 };
+  }
+  const valor = Math.max(0, valorTotalStock);
+  return { stockDisponible, costoPromedio: valor / stockDisponible, valorTotalStock: valor };
+}
+
 /**
  * Registra una entrada de stock (compra nueva, o la mitad "aplicar" de una edición).
  * cantidadBase: cantidad ya convertida a la unidad_base del insumo.
  * precioTotal: costo total pagado por esa cantidad (tal cual lo carga el usuario).
  */
 export function registrarEntrada(estado: EstadoInsumo, cantidadBase: number, precioTotal: number): EstadoInsumo {
-  const stockDisponible = estado.stockDisponible + cantidadBase;
-  const valorTotalStock = estado.valorTotalStock + precioTotal;
-  const costoPromedio = stockDisponible > 0 ? valorTotalStock / stockDisponible : 0;
-
-  return { stockDisponible, costoPromedio, valorTotalStock };
+  // Normalizar primero limpia valor fantasma ya persistido en DBs anteriores a este fix.
+  const base = normalizarEstado(estado.stockDisponible, estado.valorTotalStock);
+  return normalizarEstado(base.stockDisponible + cantidadBase, base.valorTotalStock + precioTotal);
 }
 
 /**
@@ -36,11 +50,10 @@ export function registrarEntrada(estado: EstadoInsumo, cantidadBase: number, pre
  * documentado en 01_negocio_reglas.md.
  */
 export function deshacerEntrada(estado: EstadoInsumo, cantidadBaseVieja: number, precioTotalViejo: number): EstadoInsumo {
-  const stockDisponible = Math.max(0, estado.stockDisponible - cantidadBaseVieja);
-  const valorTotalStock = Math.max(0, estado.valorTotalStock - precioTotalViejo);
-  const costoPromedio = stockDisponible > 0 ? valorTotalStock / stockDisponible : 0;
-
-  return { stockDisponible, costoPromedio, valorTotalStock };
+  return normalizarEstado(
+    Math.max(0, estado.stockDisponible - cantidadBaseVieja),
+    estado.valorTotalStock - precioTotalViejo
+  );
 }
 
 /**
@@ -69,7 +82,8 @@ export function costoDeConsumo(estado: EstadoInsumo, cantidad: number): number {
 
 /**
  * Consumir stock al producir un lote (docs/01_negocio_reglas.md, sección 4).
- * No modifica costoPromedio — solo se descuenta cantidad y valor.
+ * No modifica costoPromedio — solo se descuenta cantidad y valor (salvo que el
+ * stock se agote: ahí todo queda en 0, igual que en normalizarEstado).
  * Lanza error si no hay stock suficiente (regla: producción se bloquea).
  */
 export function consumirStock(estado: EstadoInsumo, cantidadUsada: number): EstadoInsumo {
@@ -82,5 +96,8 @@ export function consumirStock(estado: EstadoInsumo, cantidadUsada: number): Esta
   const stockDisponible = estado.stockDisponible - cantidadUsada;
   const valorTotalStock = estado.valorTotalStock - costoUsado;
 
-  return { stockDisponible, costoPromedio: estado.costoPromedio, valorTotalStock };
+  if (stockDisponible <= EPSILON_STOCK) {
+    return { stockDisponible: 0, costoPromedio: 0, valorTotalStock: 0 };
+  }
+  return { stockDisponible, costoPromedio: estado.costoPromedio, valorTotalStock: Math.max(0, valorTotalStock) };
 }
